@@ -35,7 +35,7 @@ export function ProjectReactionBar({
 
     startTransition(async () => {
       try {
-        const response = await fetch(`${window.location.origin.replace(/:\d+$/, ":8000")}/api/v1/projects/${projectId}/reactions`, {
+        const response = await fetch(`/api/bff/projects/${projectId}/reactions`, {
           method: "POST",
           credentials: "include",
           headers: {

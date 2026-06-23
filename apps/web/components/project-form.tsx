@@ -249,7 +249,6 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
 
     startTransition(async () => {
       try {
-        const uploadApiOrigin = `${window.location.protocol}//${window.location.hostname}:8000`;
         const draftPayload = JSON.stringify({
           ...parsed.data,
           githubUrl: parsed.data.githubUrl || null,
@@ -275,7 +274,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
         const uploadedImageUrls = [];
         for (const image of pendingImages) {
           const readyFile = await uploadFile(image.file);
-          const uploadResponse = await fetch(`${uploadApiOrigin}/api/v1/uploads/projects/${result.id}/images`, {
+          const uploadResponse = await fetch(`/api/bff/uploads/projects/${result.id}/images`, {
             method: "POST",
             headers: {
               "Content-Type": readyFile.type,
