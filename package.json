@@ -1,0 +1,15 @@
+{
+  "name": "makerhub",
+  "private": true,
+  "packageManager": "pnpm@10.7.1",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "uv run --project apps/api uvicorn app.main:app --reload",
+    "build:web": "pnpm --filter web build",
+    "lint:web": "pnpm --filter web lint",
+    "typecheck:web": "pnpm --filter web typecheck",
+    "check:api": "uv run --project apps/api python -m compileall app",
+    "test:api": "uv run --project apps/api pytest"
+  }
+}
+
