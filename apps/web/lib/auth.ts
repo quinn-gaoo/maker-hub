@@ -29,11 +29,6 @@ export async function auth() {
   return payload.authenticated ? payload : null;
 }
 
-export function getAuthStartUrl(provider: "google" | "github", callbackUrl = "http://localhost:3000/") {
-  const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/auth/${provider}/start?callback_url=${encodeURIComponent(callbackUrl)}`;
-}
-
 export function getLogoutUrl() {
   return `${getApiBaseUrl()}/auth/logout`;
 }

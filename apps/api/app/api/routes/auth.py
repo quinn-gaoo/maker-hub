@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.core.auth import (
     build_frontend_callback_url,
+    build_callback_url,
     build_github_authorization_url,
     build_google_authorization_url,
     clear_session_cookie,
@@ -184,7 +185,7 @@ async def _exchange_google_code(code: str, code_verifier: str) -> dict:
                 "code": code,
                 "code_verifier": code_verifier,
                 "grant_type": "authorization_code",
-                "redirect_uri": f"{settings.auth_base_url.rstrip('/')}/api/v1/auth/google/callback",
+                "redirect_uri": build_callback_url("google"),
             },
         )
         token_response.raise_for_status()
@@ -227,7 +228,7 @@ async def _exchange_github_code(code: str, code_verifier: str) -> dict:
                 "client_secret": settings.auth_github_secret,
                 "code": code,
                 "code_verifier": code_verifier,
-                "redirect_uri": f"{settings.auth_base_url.rstrip('/')}/api/v1/auth/github/callback",
+                "redirect_uri": build_callback_url("github"),
             },
         )
         token_response.raise_for_status()

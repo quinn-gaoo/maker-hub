@@ -119,7 +119,12 @@ def clear_session_cookie(response: Response) -> None:
 
 
 def build_callback_url(provider: str) -> str:
-    return f"{get_settings().auth_base_url.rstrip('/')}/api/v1/auth/{provider}/callback"
+    settings = get_settings()
+    if provider == "google" and settings.auth_google_redirect_uri:
+        return settings.auth_google_redirect_uri
+    if provider == "github" and settings.auth_github_redirect_uri:
+        return settings.auth_github_redirect_uri
+    return f"{settings.auth_base_url.rstrip('/')}/api/v1/auth/{provider}/callback"
 
 
 def build_frontend_callback_url(callback_url: str | None = None) -> str:

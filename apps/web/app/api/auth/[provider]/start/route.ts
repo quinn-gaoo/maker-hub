@@ -11,8 +11,10 @@ export async function GET(request: Request, { params }: RouteContext) {
   const { searchParams } = new URL(request.url);
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const baseUrl = getApiBaseUrl();
+  const frontendBaseUrl = (process.env.AUTH_URL ?? new URL(request.url).origin).replace(/\/$/, "");
+  const callback = callbackUrl.startsWith("http") ? callbackUrl : `${frontendBaseUrl}${callbackUrl.startsWith("/") ? callbackUrl : `/${callbackUrl}`}`;
   const response = await fetch(
-    `${baseUrl}/auth/${provider}/start?callback_url=${encodeURIComponent(`http://localhost:3000${callbackUrl}`)}`,
+    `${baseUrl}/auth/${provider}/start?callback_url=${encodeURIComponent(callback)}`,
     {
       headers: { Accept: "application/json" },
       cache: "no-store",

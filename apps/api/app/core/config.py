@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     public_api_base_url: str = "http://127.0.0.1:8000"
     auth_google_id: str | None = None
     auth_google_secret: str | None = None
+    auth_google_redirect_uri: str | None = None
     auth_github_id: str | None = None
     auth_github_secret: str | None = None
+    auth_github_redirect_uri: str | None = None
     cos_secret_id: str
     cos_secret_key: str
     cos_bucket: str
