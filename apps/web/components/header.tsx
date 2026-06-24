@@ -33,9 +33,7 @@ export async function Header() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-1 items-center gap-6">
             <Link href="/" className="flex items-center gap-3">
-              <span className="rounded-lg bg-primary px-2.5 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-primary-foreground shadow-sm">
-                MH
-              </span>
+              <img src="/logo.svg" alt="MakerHub" className="size-9 rounded-[8px] shadow-sm" />
               <span className="font-heading text-base font-black tracking-[-0.03em] md:text-lg">MakerHub</span>
             </Link>
             <nav className="hidden items-center gap-1 rounded-full bg-background/62 p-1 md:flex">

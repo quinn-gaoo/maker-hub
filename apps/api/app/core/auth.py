@@ -132,13 +132,13 @@ def build_frontend_callback_url(callback_url: str | None = None) -> str:
     return callback_url or settings.auth_frontend_url.rstrip("/") + "/"
 
 
-def build_google_authorization_url(state: str, code_challenge: str) -> str:
+def build_google_authorization_url(state: str, code_challenge: str, redirect_uri: str | None = None) -> str:
     settings = get_settings()
     if not settings.auth_google_id:
         raise bad_request("Google 登录暂未配置。")
     params = {
         "client_id": settings.auth_google_id,
-        "redirect_uri": build_callback_url("google"),
+        "redirect_uri": redirect_uri or build_callback_url("google"),
         "response_type": "code",
         "scope": "openid email profile",
         "state": state,
@@ -150,13 +150,13 @@ def build_google_authorization_url(state: str, code_challenge: str) -> str:
     return "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
 
 
-def build_github_authorization_url(state: str, code_challenge: str) -> str:
+def build_github_authorization_url(state: str, code_challenge: str, redirect_uri: str | None = None) -> str:
     settings = get_settings()
     if not settings.auth_github_id:
         raise bad_request("GitHub 登录暂未配置。")
     params = {
         "client_id": settings.auth_github_id,
-        "redirect_uri": build_callback_url("github"),
+        "redirect_uri": redirect_uri or build_callback_url("github"),
         "response_type": "code",
         "scope": "read:user user:email",
         "state": state,

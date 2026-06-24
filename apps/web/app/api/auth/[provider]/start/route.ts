@@ -13,8 +13,9 @@ export async function GET(request: Request, { params }: RouteContext) {
   const baseUrl = getApiBaseUrl();
   const frontendBaseUrl = (process.env.AUTH_URL ?? new URL(request.url).origin).replace(/\/$/, "");
   const callback = callbackUrl.startsWith("http") ? callbackUrl : `${frontendBaseUrl}${callbackUrl.startsWith("/") ? callbackUrl : `/${callbackUrl}`}`;
+  const redirectUri = `${frontendBaseUrl}/login/oauth/${provider}`;
   const response = await fetch(
-    `${baseUrl}/auth/${provider}/start?callback_url=${encodeURIComponent(callback)}`,
+    `${baseUrl}/auth/${provider}/start?callback_url=${encodeURIComponent(callback)}&redirect_uri=${encodeURIComponent(redirectUri)}`,
     {
       headers: { Accept: "application/json" },
       cache: "no-store",

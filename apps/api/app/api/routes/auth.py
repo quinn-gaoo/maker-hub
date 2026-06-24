@@ -10,7 +10,7 @@ import httpx
 from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy import delete, select
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -43,6 +43,8 @@ from app.schemas.auth import (
     EmailLoginRequest,
     EmailRegisterRequest,
     OAuthCallbackState,
+    OAuthCompleteRequest,
+    OAuthCompleteResponse,
     OAuthProviderStatus,
     OAuthStartResponse,
     SendEmailVerificationCodeRequest,
@@ -183,12 +185,13 @@ def _provider_status() -> list[OAuthProviderStatus]:
     ]
 
 
-def _build_state(callback_url: str | None) -> tuple[str, str]:
+def _build_state(callback_url: str | None, redirect_uri: str) -> tuple[str, str]:
     verifier = generate_code_verifier()
     state = encode_state(
         OAuthCallbackState(
             code_verifier=verifier,
             callback_url=build_frontend_callback_url(callback_url),
+            redirect_uri=redirect_uri,
             created_at=datetime.now(UTC),
         )
     )
@@ -355,18 +358,23 @@ def login_with_email(payload: EmailLoginRequest, response: Response, db: Session
 
 
 @router.get("/{provider}/start", response_model=OAuthStartResponse)
-def start_oauth(provider: str, callback_url: str | None = Query(default=None)):
-    state, verifier = _build_state(callback_url)
+def start_oauth(
+    provider: str,
+    callback_url: str | None = Query(default=None),
+    redirect_uri: str | None = Query(default=None),
+):
+    oauth_redirect_uri = redirect_uri or build_callback_url(provider)
+    state, verifier = _build_state(callback_url, oauth_redirect_uri)
     challenge = generate_code_challenge(verifier)
 
     if provider == "google":
-        return OAuthStartResponse(authorization_url=build_google_authorization_url(state, challenge))
+        return OAuthStartResponse(authorization_url=build_google_authorization_url(state, challenge, oauth_redirect_uri))
     if provider == "github":
-        return OAuthStartResponse(authorization_url=build_github_authorization_url(state, challenge))
+        return OAuthStartResponse(authorization_url=build_github_authorization_url(state, challenge, oauth_redirect_uri))
     raise bad_request("不支持的登录提供商。")
 
 
-async def _exchange_google_code(code: str, code_verifier: str) -> dict:
+async def _exchange_google_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
     async with httpx.AsyncClient(timeout=20) as client:
         token_response = await client.post(
@@ -377,7 +385,7 @@ async def _exchange_google_code(code: str, code_verifier: str) -> dict:
                 "code": code,
                 "code_verifier": code_verifier,
                 "grant_type": "authorization_code",
-                "redirect_uri": build_callback_url("google"),
+                "redirect_uri": redirect_uri,
             },
         )
         token_response.raise_for_status()
@@ -410,7 +418,7 @@ async def _exchange_google_code(code: str, code_verifier: str) -> dict:
     }
 
 
-async def _exchange_github_code(code: str, code_verifier: str) -> dict:
+async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
     async with httpx.AsyncClient(timeout=20, headers={"Accept": "application/json"}) as client:
         token_response = await client.post(
@@ -420,7 +428,7 @@ async def _exchange_github_code(code: str, code_verifier: str) -> dict:
                 "client_secret": settings.auth_github_secret,
                 "code": code,
                 "code_verifier": code_verifier,
-                "redirect_uri": build_callback_url("github"),
+                "redirect_uri": redirect_uri,
             },
         )
         token_response.raise_for_status()
@@ -475,15 +483,32 @@ async def _upsert_auth_user(db: Session, auth_payload: dict) -> User:
             user.name = user_data["name"]
             user.email = user_data["email"]
             user.image = user_data["image"]
+            account.access_token = auth_payload["access_token"]
+            account.refresh_token = auth_payload["refresh_token"]
+            account.expires_at = auth_payload["expires_at"]
+            account.token_type = auth_payload["token_type"]
+            account.scope = auth_payload["scope"]
+            account.id_token = auth_payload["id_token"]
+            account.session_state = auth_payload["session_state"]
     else:
-        user = User(
-            id=user_data["id"],
-            name=user_data["name"],
-            email=user_data["email"],
-            image=user_data["image"],
-        )
-        db.add(user)
-        db.flush()
+        user = None
+        if user_data["email"]:
+            user = db.execute(select(User).where(User.email == user_data["email"])).scalar_one_or_none()
+
+        if user:
+            user.name = user_data["name"] or user.name
+            user.image = user_data["image"] or user.image
+        else:
+            user = User(
+                id=user_data["id"],
+                name=user_data["name"],
+                email=user_data["email"],
+                image=user_data["image"],
+                email_verified=datetime.now(UTC) if user_data["email"] else None,
+            )
+            db.add(user)
+            db.flush()
+
         db.add(
             Account(
                 id=create_session_token(),
@@ -501,18 +526,24 @@ async def _upsert_auth_user(db: Session, auth_payload: dict) -> User:
             )
         )
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise bad_request("该第三方账号绑定失败，请确认邮箱是否已被其他账号占用。") from exc
+
     db.refresh(user)
     ensure_user_profile(db, user)
     return user
 
 
-async def _complete_oauth(provider: str, code: str, state: str, db: Session) -> RedirectResponse:
+async def _finish_oauth(provider: str, code: str, state: str, db: Session) -> tuple[User, str, str, datetime]:
     state_payload = decode_state(state)
+    redirect_uri = state_payload.redirect_uri or build_callback_url(provider)
     if provider == "google":
-        auth_payload = await _exchange_google_code(code, state_payload.code_verifier)
+        auth_payload = await _exchange_google_code(code, state_payload.code_verifier, redirect_uri)
     elif provider == "github":
-        auth_payload = await _exchange_github_code(code, state_payload.code_verifier)
+        auth_payload = await _exchange_github_code(code, state_payload.code_verifier, redirect_uri)
     else:
         raise bad_request("不支持的登录提供商。")
 
@@ -521,11 +552,37 @@ async def _complete_oauth(provider: str, code: str, state: str, db: Session) -> 
     expires = session_expiry()
     db.add(AuthSession(session_token=token, user_id=user.id, expires=expires))
     db.commit()
+    return user, state_payload.callback_url, token, expires
 
-    destination = state_payload.callback_url
+
+async def _complete_oauth(provider: str, code: str, state: str, db: Session) -> RedirectResponse:
+    user, destination, token, expires = await _finish_oauth(provider, code, state, db)
+
     response = RedirectResponse(url=destination, status_code=302)
     set_session_cookie(response, token, expires)
     return response
+
+
+@router.post("/{provider}/complete", response_model=OAuthCompleteResponse)
+async def complete_oauth(
+    provider: str,
+    payload: OAuthCompleteRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    user, destination, token, expires = await _finish_oauth(provider, payload.code, payload.state, db)
+    set_session_cookie(response, token, expires)
+    return OAuthCompleteResponse(
+        authenticated=True,
+        callback_url=destination,
+        user=AuthSessionUser(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            image=user.image,
+            username=user.username,
+        ),
+    )
 
 
 @router.get("/google/callback")

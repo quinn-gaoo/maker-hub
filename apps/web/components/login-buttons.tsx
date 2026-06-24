@@ -32,6 +32,9 @@ export function LoginButtons({ providers }: LoginButtonsProps) {
                 return;
               }
               startTransition(() => {
+                if (typeof window !== "undefined") {
+                  window.sessionStorage.setItem("makerhub-oauth-callback-url", "/");
+                }
                 void fetch(`/api/auth/${provider.id}/start?callbackUrl=/`, {
                   method: "GET",
                 })

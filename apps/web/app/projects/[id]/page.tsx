@@ -45,8 +45,11 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     month: "long",
     day: "numeric",
   });
-  const heroImage = project.images[0]?.imageUrl ?? project.coverImageUrl;
-  const galleryImages = project.images.slice(heroImage === project.images[0]?.imageUrl ? 1 : 0);
+  const galleryImages = project.images.length > 0
+    ? project.images
+    : project.coverImageUrl
+      ? [{ id: `${project.id}-cover`, imageUrl: project.coverImageUrl, sortOrder: 0 }]
+      : [];
   const authorName = project.author.name ?? project.author.username ?? "Creator";
   const authorInitial = (project.author.username ?? project.author.name ?? "M").slice(0, 1).toUpperCase();
 
@@ -59,16 +62,6 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
       <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_370px] xl:grid-cols-[minmax(0,1fr)_410px]">
         <div className="min-w-0 space-y-8">
-          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-            {heroImage ? (
-              <img src={heroImage} alt={project.title} className="aspect-[1.6/1] w-full object-cover" />
-            ) : (
-              <div className="grid aspect-[1.6/1] place-items-center bg-muted text-sm uppercase tracking-[0.28em] text-muted-foreground">
-                No Cover
-              </div>
-            )}
-          </div>
-
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {project.author.username ? (

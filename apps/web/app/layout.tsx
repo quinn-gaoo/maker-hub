@@ -30,16 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={cn("min-h-screen")}>
         <Header />
-        <main className="px-4 pb-20 pt-10 md:px-8 md:pb-28 md:pt-12">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-10">{children}</div>
+        <main>
+          <div className="flex w-full flex-col gap-10">{children}</div>
         </main>
         <footer className="border-t border-border/80 bg-[#f1e5d8]/80 px-4 py-10 dark:bg-[#130d08]/92 md:px-8">
           <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div className="space-y-4">
               <Link href="/" className="inline-flex items-center gap-3">
-                <span className="rounded-lg bg-primary px-2.5 py-1.5 text-[11px] font-black text-primary-foreground">
-                  MH
-                </span>
+                <img src="/logo.svg" alt="MakerHub" className="size-9 rounded-[8px] shadow-sm" />
                 <span className="text-base font-bold">MakerHub</span>
               </Link>
               <p className="max-w-xs text-sm leading-6 text-muted-foreground">

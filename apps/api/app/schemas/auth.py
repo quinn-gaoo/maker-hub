@@ -29,7 +29,19 @@ class OAuthProviderStatus(APIModel):
 class OAuthCallbackState(APIModel):
     code_verifier: str
     callback_url: str
+    redirect_uri: str | None = None
     created_at: datetime
+
+
+class OAuthCompleteRequest(APIModel):
+    code: str
+    state: str
+
+
+class OAuthCompleteResponse(APIModel):
+    authenticated: bool
+    user: AuthSessionUser | None = None
+    callback_url: str
 
 
 class EmailRegisterRequest(APIModel):
