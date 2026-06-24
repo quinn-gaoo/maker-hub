@@ -24,6 +24,8 @@ export async function Header() {
   ];
   const username = session?.user?.username;
   const displayName = username ?? session?.user?.name ?? "creator";
+  const profileName = session?.user?.name ?? "MakerHub 用户";
+  const avatarUrl = session?.user?.image;
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-[#fffaf2]/82 backdrop-blur-xl dark:bg-black/86">
@@ -60,38 +62,54 @@ export async function Header() {
                     "border-border/70 bg-background/80 px-3",
                   )}
                 >
-                  <UserRound />
+                  <span className="flex size-5 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={profileName} className="h-full w-full object-cover" />
+                    ) : (
+                      <UserRound className="size-3.5" />
+                    )}
+                  </span>
                   <span className="max-w-28 truncate font-mono">@{displayName}</span>
                   <ChevronDown className="size-4 text-muted-foreground" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="truncate font-mono">@{displayName}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-[#e8dccd] bg-[#fffdf9] p-0 shadow-[0_18px_45px_rgba(76,47,24,0.12)]">
+                  <DropdownMenuLabel className="space-y-1 px-4 py-4">
+                    <p className="truncate text-lg font-semibold tracking-[-0.04em] text-foreground">{profileName}</p>
+                    <p className="truncate font-mono text-sm text-muted-foreground">@{displayName}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="mx-0 my-0 bg-[#efe4d8]" />
+                  <div className="px-2 py-2">
+                    <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
                     <Link href={`/u/${username}`}>
-                      <UserRound />
+                      <UserRound className="mr-2.5 size-4.5 stroke-[2.1]" />
                       我的主页
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
                     <Link href="/me/projects">
-                      <FolderKanban />
+                      <FolderKanban className="mr-2.5 size-4.5 stroke-[2.1]" />
                       我的项目
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
                     <Link href="/me/profile">
-                      <Settings />
+                      <Settings className="mr-2.5 size-4.5 stroke-[2.1]" />
                       编辑个人信息
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <SignOutButton variant="menu">
-                      <LogOut />
-                      退出登录
-                    </SignOutButton>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
+                  </div>
+                  <DropdownMenuSeparator className="mx-0 my-0 bg-[#efe4d8]" />
+                  <div className="px-2 py-2">
+                    <DropdownMenuItem
+                      asChild
+                      className="rounded-xl px-2.5 py-2 text-sm font-medium text-[#c2410c] focus:bg-[#fff1e8] focus:text-[#c2410c]"
+                    >
+                      <SignOutButton variant="menu">
+                        <LogOut className="mr-2.5 size-4.5 stroke-[2.1]" />
+                        退出登录
+                      </SignOutButton>
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

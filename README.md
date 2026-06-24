@@ -14,10 +14,11 @@ AI 创作者作品宣传站 MVP，采用前后端分离架构：
 pnpm install
 ```
 
-2. 安装后端依赖
+2. 初始化后端虚拟环境与依赖
 
 ```bash
-uv sync --project apps/api
+cd apps/api
+uv sync
 ```
 
 3. 配置环境变量
@@ -63,5 +64,6 @@ pnpm dev:api
 后端使用 Alembic 管理数据库结构：
 
 ```bash
-uv run --project apps/api alembic upgrade head
+cd apps/api
+./.venv/bin/alembic upgrade head
 ```
