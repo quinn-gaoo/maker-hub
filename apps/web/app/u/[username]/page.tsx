@@ -30,7 +30,7 @@ export default async function UserPage({ params }: UserPageProps) {
   const isOwnProfile = session?.user?.id === profile.id;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 md:px-8">
       <section className="rounded-[2rem] border border-border/70 bg-card/80 p-8 shadow-[0_18px_60px_rgba(0,0,0,0.05)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">

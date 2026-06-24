@@ -19,7 +19,7 @@ export default async function MyProjectsPage() {
   const projects = await apiGet<PaginatedResponse<ProjectCardType>>(`/users/${session.user.username}/projects`);
 
   return (
-    <div className="space-y-10 py-6 md:py-10">
+    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-6 md:px-8 md:py-10">
       <section className="rounded-[1.75rem] border border-border/80 bg-card/70 p-8 shadow-sm md:p-14">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div className="max-w-2xl space-y-6">

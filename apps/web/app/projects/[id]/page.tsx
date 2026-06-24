@@ -54,7 +54,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const authorInitial = (project.author.username ?? project.author.name ?? "M").slice(0, 1).toUpperCase();
 
   return (
-    <div className="space-y-10">
+    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 md:px-8">
       <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="size-4" />
         返回发现页
