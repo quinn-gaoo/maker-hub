@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import hashlib
+import hmac
+import secrets
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -29,8 +32,9 @@ from app.core.auth import (
 )
 from app.core.config import get_settings
 from app.core.errors import bad_request, unauthorized
+from app.email import send_email
 from app.core.security import AuthenticatedUser, get_session_user
-from app.models.auth import Account, Session as AuthSession
+from app.models.auth import Account, EmailVerificationCode, Session as AuthSession
 from app.models.user import User
 from app.schemas.auth import (
     AuthSessionResponse,
@@ -40,10 +44,86 @@ from app.schemas.auth import (
     OAuthCallbackState,
     OAuthProviderStatus,
     OAuthStartResponse,
+    SendEmailVerificationCodeRequest,
+    SendEmailVerificationCodeResponse,
 )
 from app.services import ensure_user_profile
 
 router = APIRouter(prefix="/auth")
+REGISTER_VERIFICATION_PURPOSE = "register"
+
+
+def _verification_secret() -> str:
+    return get_settings().auth_session_secret
+
+
+def _build_verification_code() -> str:
+    settings = get_settings()
+    digits = "".join(secrets.choice("0123456789") for _ in range(settings.email_verification_code_length))
+    return f"{settings.email_verification_code_prefix}-{digits}"
+
+
+def _hash_verification_code(email: str, purpose: str, code: str) -> str:
+    payload = f"{normalize_email(email)}:{purpose}:{code.strip().upper()}"
+    return hmac.new(_verification_secret().encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _verification_code_expiry() -> datetime:
+    settings = get_settings()
+    return datetime.now(UTC) + timedelta(minutes=settings.email_verification_code_ttl_minutes)
+
+
+def _validate_email_address(email: str) -> str:
+    normalized = normalize_email(email)
+    if not normalized:
+        raise bad_request("邮箱不能为空。", {"email": "邮箱不能为空"})
+    if "@" not in normalized:
+        raise bad_request("请输入有效的邮箱地址。", {"email": "请输入有效的邮箱地址"})
+    return normalized
+
+
+def _verify_registration_code(db: Session, email: str, submitted_code: str) -> EmailVerificationCode:
+    normalized_code = submitted_code.strip().upper()
+    expected_hash = _hash_verification_code(email, REGISTER_VERIFICATION_PURPOSE, normalized_code)
+    record = db.execute(
+        select(EmailVerificationCode)
+        .where(
+            EmailVerificationCode.email == email,
+            EmailVerificationCode.purpose == REGISTER_VERIFICATION_PURPOSE,
+            EmailVerificationCode.code_hash == expected_hash,
+        )
+        .order_by(EmailVerificationCode.created_at.desc())
+    ).scalar_one_or_none()
+
+    if not record:
+        raise bad_request("验证码错误。", {"verificationCode": "验证码错误"})
+    if record.used_at is not None:
+        raise bad_request("验证码已使用，请重新获取。", {"verificationCode": "验证码已使用"})
+    if record.expires_at <= datetime.now(UTC):
+        raise bad_request("验证码已过期，请重新获取。", {"verificationCode": "验证码已过期"})
+    return record
+
+
+def _send_registration_email(to_email: str, code: str) -> None:
+    settings = get_settings()
+    ttl_minutes = settings.email_verification_code_ttl_minutes
+    subject = f"{settings.smtp_from_name} 注册验证码"
+    text_content = (
+        f"你好，\n\n"
+        f"你的 MakerHub 注册验证码是：{code}\n"
+        f"验证码 {ttl_minutes} 分钟内有效，请勿泄露给他人。\n\n"
+        f"如果这不是你的操作，请忽略这封邮件。"
+    )
+    html_content = f"""
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;">
+      <p>你好，</p>
+      <p>你的 <strong>MakerHub</strong> 注册验证码如下：</p>
+      <p style="margin:24px 0;font-size:28px;font-weight:700;letter-spacing:2px;">{code}</p>
+      <p>验证码 <strong>{ttl_minutes}</strong> 分钟内有效，请勿泄露给他人。</p>
+      <p>如果这不是你的操作，请忽略这封邮件。</p>
+    </div>
+    """.strip()
+    send_email(to_email=to_email, subject=subject, text_content=text_content, html_content=html_content)
 
 
 def _provider_status() -> list[OAuthProviderStatus]:
@@ -96,16 +176,69 @@ def _persist_session(db: Session, user_id: str) -> tuple[str, datetime]:
     return token, expires
 
 
+@router.post("/email-verification-code", response_model=SendEmailVerificationCodeResponse)
+def send_register_verification_code(payload: SendEmailVerificationCodeRequest, db: Session = Depends(get_db)):
+    settings = get_settings()
+    email = _validate_email_address(payload.email)
+
+    existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if existing:
+        raise bad_request("该邮箱已注册。", {"email": "该邮箱已注册"})
+
+    latest = db.execute(
+        select(EmailVerificationCode)
+        .where(
+            EmailVerificationCode.email == email,
+            EmailVerificationCode.purpose == REGISTER_VERIFICATION_PURPOSE,
+        )
+        .order_by(EmailVerificationCode.created_at.desc())
+    ).scalar_one_or_none()
+    now = datetime.now(UTC)
+    cooldown = timedelta(seconds=settings.email_verification_code_cooldown_seconds)
+    if latest and latest.created_at > now - cooldown:
+        raise bad_request(
+            f"验证码发送过于频繁，请在 {settings.email_verification_code_cooldown_seconds} 秒后重试。",
+            {"email": "请稍后再试"},
+        )
+
+    code = _build_verification_code()
+    expires_at = _verification_code_expiry()
+    db.execute(
+        delete(EmailVerificationCode).where(
+            EmailVerificationCode.email == email,
+            EmailVerificationCode.purpose == REGISTER_VERIFICATION_PURPOSE,
+        )
+    )
+    db.add(
+        EmailVerificationCode(
+            id=create_session_token(),
+            email=email,
+            purpose=REGISTER_VERIFICATION_PURPOSE,
+            code_hash=_hash_verification_code(email, REGISTER_VERIFICATION_PURPOSE, code),
+            expires_at=expires_at,
+        )
+    )
+    try:
+        _send_registration_email(email, code)
+    except Exception:
+        db.rollback()
+        raise
+    db.commit()
+
+    return SendEmailVerificationCodeResponse(
+        message="验证码已发送到你的邮箱，请注意查收。",
+        cooldown_seconds=settings.email_verification_code_cooldown_seconds,
+        expires_in_seconds=settings.email_verification_code_ttl_minutes * 60,
+    )
+
+
 @router.post("/register", response_model=AuthSessionResponse)
 def register_with_email(payload: EmailRegisterRequest, response: Response, db: Session = Depends(get_db)):
-    email = normalize_email(payload.email)
+    email = _validate_email_address(payload.email)
     password = payload.password
     name = payload.name.strip() if payload.name else None
+    verified_at = datetime.now(UTC)
 
-    if not email:
-        raise bad_request("邮箱不能为空。", {"email": "邮箱不能为空"})
-    if "@" not in email:
-        raise bad_request("请输入有效的邮箱地址。", {"email": "请输入有效的邮箱地址"})
     if len(password) < 8:
         raise bad_request("密码至少需要 8 个字符。", {"password": "密码至少需要 8 个字符"})
 
@@ -113,14 +246,19 @@ def register_with_email(payload: EmailRegisterRequest, response: Response, db: S
     if existing:
         raise bad_request("该邮箱已注册。", {"email": "该邮箱已注册"})
 
+    verification_record = _verify_registration_code(db, email, payload.verification_code)
+
     user = User(
         id=create_session_token(),
         name=name or email.split("@", 1)[0],
         email=email,
+        email_verified=verified_at,
         password_hash=hash_password(password),
         image=None,
     )
     db.add(user)
+    verification_record.used_at = verified_at
+    db.add(verification_record)
     db.commit()
     db.refresh(user)
     ensure_user_profile(db, user)
@@ -141,9 +279,7 @@ def register_with_email(payload: EmailRegisterRequest, response: Response, db: S
 
 @router.post("/login", response_model=AuthSessionResponse)
 def login_with_email(payload: EmailLoginRequest, response: Response, db: Session = Depends(get_db)):
-    email = normalize_email(payload.email)
-    if not email or "@" not in email:
-        raise bad_request("请输入有效的邮箱地址。", {"email": "请输入有效的邮箱地址"})
+    email = _validate_email_address(payload.email)
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if not user or not verify_password(payload.password, user.password_hash):
         raise unauthorized("邮箱或密码错误。")

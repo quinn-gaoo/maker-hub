@@ -36,8 +36,19 @@ class EmailRegisterRequest(APIModel):
     name: str | None = None
     email: str
     password: str
+    verification_code: str
 
 
 class EmailLoginRequest(APIModel):
     email: str
     password: str
+
+
+class SendEmailVerificationCodeRequest(APIModel):
+    email: str
+
+
+class SendEmailVerificationCodeResponse(APIModel):
+    message: str
+    cooldown_seconds: int
+    expires_in_seconds: int

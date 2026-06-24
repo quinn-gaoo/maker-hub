@@ -1,4 +1,6 @@
-from sqlalchemy import DateTime, ForeignKey, String, Text
+import datetime as dt
+
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -39,3 +41,15 @@ class VerificationToken(Base):
     identifier: Mapped[str] = mapped_column(String(255), primary_key=True)
     token: Mapped[str] = mapped_column(String(255), primary_key=True)
     expires: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EmailVerificationCode(Base):
+    __tablename__ = "email_verification_codes"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    purpose: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -28,3 +28,9 @@ def not_found(message: str = "Not found") -> HTTPException:
         detail={"code": "NOT_FOUND", "message": message, "field_errors": {}},
     )
 
+
+def service_unavailable(message: str = "Service unavailable") -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={"code": "SERVICE_UNAVAILABLE", "message": message, "field_errors": {}},
+    )

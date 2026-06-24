@@ -18,6 +18,17 @@ class Settings(BaseSettings):
     auth_github_id: str | None = None
     auth_github_secret: str | None = None
     auth_github_redirect_uri: str | None = None
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    smtp_from_email: str | None = None
+    smtp_from_name: str = "MakerHub"
+    email_verification_code_prefix: str = "MKH"
+    email_verification_code_length: int = 6
+    email_verification_code_ttl_minutes: int = 10
+    email_verification_code_cooldown_seconds: int = 60
     cos_secret_id: str
     cos_secret_key: str
     cos_bucket: str

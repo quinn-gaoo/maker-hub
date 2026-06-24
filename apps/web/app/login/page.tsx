@@ -17,12 +17,12 @@ export default function LoginPage() {
         <div className="mt-6 space-y-4">
           <h1 className="font-heading text-4xl font-semibold tracking-[-0.08em] md:text-5xl">登录 MakerHub</h1>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">
-            你现在可以继续使用 Google、GitHub 登录，也可以直接用邮箱注册和登录。
+            你现在可以继续使用 Google、GitHub 登录，也可以通过邮箱验证码完成注册和登录。
           </p>
         </div>
         <div className="mt-8 space-y-3 text-sm text-muted-foreground">
           <p>统一管理你的 AI 项目、图片、评论和主页展示。</p>
-          <p>邮箱账号适合希望长期运营作品集的创作者。</p>
+          <p>邮箱账号适合希望长期运营作品集的创作者，注册时需要完成邮箱验证码验证。</p>
         </div>
       </div>
       <div className="grid gap-6">
