@@ -29,6 +29,8 @@ uv sync
 pnpm run sync:backend
 ```
 
+`pnpm run sync:backend` 默认会使用清华 PyPI 镜像和系统证书，适合国内网络环境。如需改回其他源，可以在执行前覆盖 `UV_DEFAULT_INDEX`。
+
 3. 配置环境变量
 
 - 门户前端参考 [apps/frontend/portal/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/apps/frontend/portal/.env.example)
@@ -74,5 +76,50 @@ pnpm dev:backend
 
 ```bash
 cd apps/backend
-./.venv/bin/alembic upgrade head
+uv run alembic upgrade head
+```
+
+## 服务器部署后端
+
+推荐把项目部署到类似 `/srv/makerhub` 的目录，然后执行：
+
+```bash
+git clone <你的仓库地址> /srv/makerhub
+cd /srv/makerhub/apps/backend
+cp .env.example .env
+```
+
+安装 `uv` 并同步依赖：
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+
+cd /srv/makerhub/apps/backend
+UV_CACHE_DIR=../../.uv-cache uv sync
+UV_CACHE_DIR=../../.uv-cache uv run alembic upgrade head
+```
+
+启动前可以先手动验证：
+
+```bash
+cd /srv/makerhub/apps/backend
+UV_CACHE_DIR=../../.uv-cache uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+仓库里提供了 `systemd` 模板文件 [apps/backend/scripts/makerhub-backend.service](/Users/quinn/work/quinn-gaoo/MakerHub/apps/backend/scripts/makerhub-backend.service)，按你的服务器实际用户和目录修改后执行：
+
+```bash
+sudo cp /srv/makerhub/apps/backend/scripts/makerhub-backend.service /etc/systemd/system/makerhub-backend.service
+sudo systemctl daemon-reload
+sudo systemctl enable makerhub-backend
+sudo systemctl start makerhub-backend
+sudo systemctl status makerhub-backend
+```
+
+常用运维命令：
+
+```bash
+sudo systemctl restart makerhub-backend
+sudo journalctl -u makerhub-backend -f
 ```

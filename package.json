@@ -5,7 +5,7 @@
   "scripts": {
     "dev:portal": "pnpm --filter portal dev",
     "dev:admin": "pnpm --filter admin dev",
-    "sync:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv sync",
+    "sync:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache UV_SYSTEM_CERTS=1 UV_DEFAULT_INDEX=${UV_DEFAULT_INDEX:-https://pypi.tuna.tsinghua.edu.cn/simple} uv sync",
     "dev:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv run uvicorn app.main:app --reload",
     "build:portal": "pnpm --filter portal build",
     "build:admin": "pnpm --filter admin build",

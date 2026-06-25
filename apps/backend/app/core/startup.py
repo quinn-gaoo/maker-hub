@@ -39,4 +39,4 @@ def ensure_database_ready(engine: Engine) -> None:
         raise RuntimeError("数据库迁移状态检查失败，请确认数据库结构是否可访问。") from exc
 
     if current_heads != expected_heads:
-        raise RuntimeError("数据库未迁移到最新版本，请先执行 `./.venv/bin/alembic upgrade head`。")
+        raise RuntimeError("数据库未迁移到最新版本，请先执行 `uv run alembic upgrade head`。")
