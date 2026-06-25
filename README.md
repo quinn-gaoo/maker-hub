@@ -7,22 +7,22 @@ AI 创作者作品宣传站 MVP，采用前后端分离架构。
 ```text
 .
 ├── backend/                # FastAPI + SQLAlchemy + Alembic
-├── frontend/               # 前端 workspace 根目录
-│   ├── portal/             # 门户网站，Next.js 15
-│   ├── admin/              # 管理后台，Vite + TypeScript + React
-│   └── components/         # 共享 shadcn UI 基础组件
+├── frontend/
+│   ├── portal/             # 独立门户网站项目，Next.js 15
+│   ├── admin/              # 独立管理后台项目，Vite + TypeScript + React
+│   └── components/         # 相对独立的共享 UI 组件包
 └── package.json            # 仓库根目录脚本
 ```
 
-前端相关的 `pnpm-workspace.yaml`、`pnpm-lock.yaml`、`tsconfig.base.json` 都放在 `frontend/` 下，由 `frontend/` 统一管理 workspace。
+`frontend/portal`、`frontend/admin`、`frontend/components` 都可以分别安装依赖和单独运行；`portal` 与 `admin` 通过本地 `file:../components` 依赖复用共享组件。
 
 ## 快速开始
 
 1. 安装前端依赖
 
 ```bash
-cd frontend
-pnpm install
+cd frontend/portal && pnpm install
+cd frontend/admin && pnpm install
 ```
 
 2. 初始化后端虚拟环境与依赖
@@ -85,20 +85,22 @@ uv run python scripts/create_admin_user.py --email admin@example.com --name "Sit
 5. 启动开发服务
 
 ```bash
-pnpm dev:portal
-pnpm dev:admin
-pnpm dev:backend
+cd frontend/portal && pnpm dev
+cd frontend/admin && pnpm dev
+cd backend && uv run python -m uvicorn app.main:app --reload
 ```
 
 根目录 `package.json` 的常用脚本如下：
 
-- `pnpm dev:portal`
-- `pnpm dev:admin`
-- `pnpm dev:backend`
-- `pnpm build:portal`
-- `pnpm build:admin`
-- `pnpm typecheck:portal`
-- `pnpm typecheck:admin`
+- `cd frontend/portal && pnpm dev`
+- `cd frontend/admin && pnpm dev`
+- `cd backend && uv run python -m uvicorn app.main:app --reload`
+- `cd frontend/portal && pnpm install`
+- `cd frontend/admin && pnpm install`
+- `cd frontend/portal && pnpm build`
+- `cd frontend/admin && pnpm build`
+- `cd frontend/portal && pnpm typecheck`
+- `cd frontend/admin && pnpm typecheck`
 - `pnpm sync:backend`
 - `pnpm check:backend`
 - `pnpm test:backend`

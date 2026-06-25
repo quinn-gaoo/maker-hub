@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@makerhub/ui";
+import { Button } from "@/components/ui/button";
 
 import { updateAdminUser } from "@/lib/api";
 import type { AdminUser } from "@/types";

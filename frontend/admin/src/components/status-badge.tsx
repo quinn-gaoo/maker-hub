@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Badge, cn } from "@makerhub/ui";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type StatusBadgeProps = {
   tone: "neutral" | "success" | "warning" | "danger";

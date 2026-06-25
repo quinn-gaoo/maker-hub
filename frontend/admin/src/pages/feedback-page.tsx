@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@makerhub/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 import { FeedbackStatusActions } from "@/components/feedback-status-actions";
 import { StatusBadge } from "@/components/status-badge";

@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea } from "@makerhub/ui";
 import { Sparkles } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { createOfficialProject } from "@/lib/api";
 import type { ProjectDetail } from "@/types";
 

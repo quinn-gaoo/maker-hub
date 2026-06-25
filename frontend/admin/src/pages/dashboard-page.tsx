@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@makerhub/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderKanban, Inbox, MessageSquareText, Users } from "lucide-react";
 
 import { getAdminDashboard } from "@/lib/api";

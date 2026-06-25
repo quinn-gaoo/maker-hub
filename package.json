@@ -3,15 +3,16 @@
   "private": true,
   "packageManager": "pnpm@10.7.1",
   "scripts": {
-    "install:frontend": "pnpm --dir frontend install",
-    "dev:portal": "pnpm --dir frontend --filter portal dev",
-    "dev:admin": "pnpm --dir frontend --filter admin dev",
+    "install:portal": "cd frontend/portal && pnpm install",
+    "install:admin": "cd frontend/admin && pnpm install",
+    "dev:portal": "cd frontend/portal && pnpm dev",
+    "dev:admin": "cd frontend/admin && pnpm dev",
     "sync:backend": "cd backend && UV_SYSTEM_CERTS=1 UV_DEFAULT_INDEX=${UV_DEFAULT_INDEX:-https://pypi.tuna.tsinghua.edu.cn/simple} uv sync",
     "dev:backend": "cd backend && uv run python -m uvicorn app.main:app --reload",
-    "build:portal": "pnpm --dir frontend --filter portal build",
-    "build:admin": "pnpm --dir frontend --filter admin build",
-    "typecheck:portal": "pnpm --dir frontend --filter portal typecheck",
-    "typecheck:admin": "pnpm --dir frontend --filter admin typecheck",
+    "build:portal": "cd frontend/portal && pnpm build",
+    "build:admin": "cd frontend/admin && pnpm build",
+    "typecheck:portal": "cd frontend/portal && pnpm typecheck",
+    "typecheck:admin": "cd frontend/admin && pnpm typecheck",
     "check:backend": "cd backend && uv run python -m compileall app",
     "test:backend": "cd backend && uv run pytest"
   }

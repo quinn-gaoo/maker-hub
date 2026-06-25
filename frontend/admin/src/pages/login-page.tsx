@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@makerhub/ui";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 
 export function LoginPage() {

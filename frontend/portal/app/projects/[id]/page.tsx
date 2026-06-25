@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { CommentSection } from "@/components/comment-section";
 import { ProjectReactionBar } from "@/components/project-reaction-bar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import type { ProjectDetail } from "@/types";
 import type { ProjectViewCountResponse } from "@/types";
 

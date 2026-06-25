@@ -4,7 +4,7 @@ import { ArrowDown, Flame, Grid2X2, Rocket } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { apiGet } from "@/lib/backend";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectCard } from "@/components/project-card";
 import { cn } from "@/lib/utils";
@@ -36,12 +36,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     apiGet<PaginatedResponse<ProjectCardType>>(`/projects?${query.toString()}`),
     apiGet<HomeStats>("/stats/home"),
   ]);
-  const officialProjects = await apiGet<PaginatedResponse<ProjectCardType>>("/projects?official=true&page=1&page_size=6&sort=latest").catch(() => ({
-    items: [],
-    page: 1,
-    pageSize: 6,
-    total: 0,
-  }));
 
   const featuredProjects = projects.items.slice(0, 3);
   const currentPage = Number(projects.page);
@@ -169,23 +163,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </div>
       </section>
-
-      {officialProjects.items.length > 0 ? (
-        <section className="mx-auto w-full max-w-7xl space-y-5 px-4 md:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">Official Picks</p>
-              <h2 className="font-heading text-4xl font-black tracking-[-0.07em]">官网收录</h2>
-              <p className="mt-2 text-sm text-muted-foreground">平台精选的官方收录项目，会优先在这里展示。</p>
-            </div>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {officialProjects.items.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <section className="mx-auto w-full max-w-7xl px-4 md:px-8">
         <div className="rounded-[1.75rem] bg-[#050505] bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:34px_34px] px-6 py-10 text-white shadow-[0_28px_80px_rgba(0,0,0,0.18)] dark:bg-[#f8f5ef] dark:bg-[linear-gradient(rgba(0,0,0,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.045)_1px,transparent_1px)] dark:text-black md:px-10 md:py-12">

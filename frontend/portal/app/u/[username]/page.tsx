@@ -5,7 +5,7 @@ import { Settings } from "lucide-react";
 import { apiGet } from "@/lib/backend";
 import { auth } from "@/lib/auth";
 import { ProjectCard } from "@/components/project-card";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PaginatedResponse, ProjectCard as ProjectCardType, UserProfile } from "@/types";
 

@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FolderKanban, FolderPlus, Inbox, LayoutDashboard, LogOut, MessageSquareText, ShieldCheck, Users } from "lucide-react";
-import { Button } from "@makerhub/ui";
 
 import { useAuth } from "@/contexts/auth-context";
-import { cn } from "@makerhub/ui";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "总览", icon: LayoutDashboard },

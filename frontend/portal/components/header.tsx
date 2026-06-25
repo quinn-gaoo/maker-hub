@@ -4,7 +4,7 @@ import { ChevronDown, FolderKanban, LogIn, LogOut, Settings, UserRound } from "l
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   DropdownMenu,
   DropdownMenuContent,

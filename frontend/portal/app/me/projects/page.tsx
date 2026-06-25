@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { ProjectCard } from "@/components/project-card";
 import { ProjectActions } from "@/components/project-actions";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import type { PaginatedResponse, ProjectCard as ProjectCardType } from "@/types";
 
 export default async function MyProjectsPage() {

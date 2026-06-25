@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@makerhub/ui";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 import { ProjectStatusActions } from "@/components/project-status-actions";
 import { StatusBadge } from "@/components/status-badge";
