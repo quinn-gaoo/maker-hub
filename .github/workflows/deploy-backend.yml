@@ -21,12 +21,20 @@ jobs:
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/www/wwwroot/maker-hub' }}
 
     steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          key_file="$RUNNER_TEMP/deploy_key"
+          printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > "$key_file"
+          chmod 600 "$key_file"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          key_path: ${{ runner.temp }}/deploy_key
+          passphrase: ${{ secrets.DEPLOY_SSH_KEY_PASSPHRASE }}
           port: ${{ env.DEPLOY_PORT }}
           script_stop: true
           script: |

@@ -169,11 +169,14 @@ sudo journalctl -u makerhub-backend -f
 DEPLOY_HOST
 DEPLOY_USER
 DEPLOY_SSH_KEY
+DEPLOY_SSH_KEY_PASSPHRASE
 DEPLOY_PORT
 DEPLOY_PATH
 ```
 
 服务器默认按 `/www/wwwroot/maker-hub/backend` 部署，`DEPLOY_PATH` 不填时会回落到 `/www/wwwroot/maker-hub`。工作流会登录服务器后调用 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，脚本会执行 `git pull --ff-only`、`uv sync`、`uv run alembic upgrade head`，然后重启 `makerhub-backend`。
+
+`DEPLOY_SSH_KEY` 里要放私钥原文，不要放 `.pub` 公钥，也不要包一层引号。常见格式是以 `-----BEGIN OPENSSH PRIVATE KEY-----` 或 `-----BEGIN RSA PRIVATE KEY-----` 开头的完整内容。
 
 也可以在服务器上单独执行同一个脚本：
 
