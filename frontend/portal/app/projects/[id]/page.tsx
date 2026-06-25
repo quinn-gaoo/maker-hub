@@ -86,8 +86,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
               <h1 className="font-heading text-4xl font-black leading-tight tracking-[-0.07em] md:text-5xl lg:text-6xl">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 {project.isOfficial ? (
-                  <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 px-3 py-1 font-mono font-semibold text-amber-700">
-                    官方收录
+                  <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 px-3 py-1 font-mono font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+                    官网收录
                   </Badge>
                 ) : null}
                 <span className="inline-flex items-center gap-1.5 font-mono">
@@ -95,19 +95,19 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                   {formatCount(viewCount)} 次浏览
                 </span>
                 <span className="h-5 w-px bg-border" />
-              <ProjectReactionBar
-                projectId={project.id}
-                initialUpvoteCount={project.upvoteCount}
-                initialDownvoteCount={project.downvoteCount}
-                initialReaction={project.currentReaction}
-                isAuthenticated={Boolean(session?.user)}
-                compact
-              />
-              {project.tags.map((tag) => (
-                <Badge key={tag.id} variant="secondary" className="rounded-full px-3 py-1 font-mono font-medium">
-                  {tag.name}
-                </Badge>
-              ))}
+                <ProjectReactionBar
+                  projectId={project.id}
+                  initialUpvoteCount={project.upvoteCount}
+                  initialDownvoteCount={project.downvoteCount}
+                  initialReaction={project.currentReaction}
+                  isAuthenticated={Boolean(session?.user)}
+                  compact
+                />
+                {project.tags.map((tag) => (
+                  <Badge key={tag.id} variant="secondary" className="rounded-full px-3 py-1 font-mono font-medium">
+                    {tag.name}
+                  </Badge>
+                ))}
               </div>
             </div>
 

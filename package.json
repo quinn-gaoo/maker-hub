@@ -6,13 +6,13 @@
     "install:frontend": "pnpm --dir frontend install",
     "dev:portal": "pnpm --dir frontend --filter portal dev",
     "dev:admin": "pnpm --dir frontend --filter admin dev",
-    "sync:backend": "cd backend && UV_CACHE_DIR=../.uv-cache UV_SYSTEM_CERTS=1 UV_DEFAULT_INDEX=${UV_DEFAULT_INDEX:-https://pypi.tuna.tsinghua.edu.cn/simple} uv sync",
-    "dev:backend": "cd backend && UV_CACHE_DIR=../.uv-cache uv run uvicorn app.main:app --reload",
+    "sync:backend": "cd backend && UV_SYSTEM_CERTS=1 UV_DEFAULT_INDEX=${UV_DEFAULT_INDEX:-https://pypi.tuna.tsinghua.edu.cn/simple} uv sync",
+    "dev:backend": "cd backend && uv run python -m uvicorn app.main:app --reload",
     "build:portal": "pnpm --dir frontend --filter portal build",
     "build:admin": "pnpm --dir frontend --filter admin build",
     "typecheck:portal": "pnpm --dir frontend --filter portal typecheck",
     "typecheck:admin": "pnpm --dir frontend --filter admin typecheck",
-    "check:backend": "cd backend && UV_CACHE_DIR=../.uv-cache uv run python -m compileall app",
-    "test:backend": "cd backend && UV_CACHE_DIR=../.uv-cache uv run pytest"
+    "check:backend": "cd backend && uv run python -m compileall app",
+    "test:backend": "cd backend && uv run pytest"
   }
 }

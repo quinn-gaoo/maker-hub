@@ -34,31 +34,43 @@ async def verify_internal_user(
     x_user_email: str | None = Header(default=None),
     x_timestamp: str | None = Header(default=None),
     x_signature: str | None = Header(default=None),
+    makerhub_session: str | None = Cookie(default=None),
     db: DbSession = Depends(get_db),
 ) -> AuthenticatedUser:
-    if not x_user_id or not x_timestamp or not x_signature:
+    if x_user_id and x_timestamp and x_signature:
+        try:
+            timestamp = int(x_timestamp)
+        except ValueError as exc:
+            raise unauthorized("时间戳不合法。") from exc
+
+        if abs(int(time.time() * 1000) - timestamp) > SIGNATURE_MAX_AGE_MS:
+            raise unauthorized("签名已过期。")
+
+        body = (await request.body()).decode("utf-8")
+        payload = f"{x_user_id}:{x_user_email or ''}:{x_timestamp}:{body}"
+        expected = hmac.new(
+            get_settings().internal_api_signing_secret.encode("utf-8"),
+            payload.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected, x_signature):
+            raise unauthorized("签名校验失败。")
+
+        user = db.get(User, x_user_id)
+        if not user:
+            raise unauthorized("用户不存在。")
+        if user.status != "active":
+            raise unauthorized("账号已被禁用。")
+        return AuthenticatedUser(user_id=user.id, email=user.email, user=user)
+
+    if not makerhub_session:
         raise unauthorized("缺少内部鉴权头。")
 
-    try:
-        timestamp = int(x_timestamp)
-    except ValueError as exc:
-        raise unauthorized("时间戳不合法。") from exc
-
-    if abs(int(time.time() * 1000) - timestamp) > SIGNATURE_MAX_AGE_MS:
-        raise unauthorized("签名已过期。")
-
-    body = (await request.body()).decode("utf-8")
-    payload = f"{x_user_id}:{x_user_email or ''}:{x_timestamp}:{body}"
-    expected = hmac.new(
-        get_settings().internal_api_signing_secret.encode("utf-8"),
-        payload.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-    if not hmac.compare_digest(expected, x_signature):
-        raise unauthorized("签名校验失败。")
-
-    user = db.get(User, x_user_id)
+    session = db.query(Session).filter(Session.session_token == makerhub_session).first()
+    if not session:
+        raise unauthorized("登录会话不存在。")
+    user = db.get(User, session.user_id)
     if not user:
         raise unauthorized("用户不存在。")
     if user.status != "active":

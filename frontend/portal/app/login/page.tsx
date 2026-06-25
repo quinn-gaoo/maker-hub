@@ -1,10 +1,11 @@
 import { EmailAuthForm } from "@/components/email-auth-form";
 import { LoginButtons } from "@/components/login-buttons";
 import { Badge } from "@/components/ui/badge";
+import { isOAuthProviderEnabled } from "@/lib/oauth";
 
 const providerMeta = [
-  { id: "google", label: "Google", enabled: true },
-  { id: "github", label: "GitHub", enabled: true },
+  { id: "google", label: "Google", enabled: isOAuthProviderEnabled("google") },
+  { id: "github", label: "GitHub", enabled: isOAuthProviderEnabled("github") },
 ];
 
 export default function LoginPage() {

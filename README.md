@@ -71,7 +71,18 @@ EMAIL_VERIFICATION_CODE_TTL_MINUTES=10
 EMAIL_VERIFICATION_CODE_COOLDOWN_SECONDS=60
 ```
 
-4. 启动开发服务
+4. 创建一个管理后台账号
+
+部署到新环境时，推荐先创建一个管理员账号，再登录管理后台：
+
+```bash
+cd backend
+uv run python scripts/create_admin_user.py --email admin@example.com --name "Site Admin" --force-role
+```
+
+如果你已经在 `backend/.env` 里配置了 `ADMIN_EMAILS`，也可以不加 `--force-role`。只要邮箱命中 `ADMIN_EMAILS`，登录后就会自动拥有管理后台权限。
+
+5. 启动开发服务
 
 ```bash
 pnpm dev:portal
@@ -118,15 +129,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc
 
 cd /srv/makerhub/backend
-UV_CACHE_DIR=../../.uv-cache uv sync
-UV_CACHE_DIR=../../.uv-cache uv run alembic upgrade head
+uv sync
+uv run alembic upgrade head
 ```
 
 启动前可以先手动验证：
 
 ```bash
 cd /srv/makerhub/backend
-UV_CACHE_DIR=../../.uv-cache uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 仓库里提供了 `systemd` 模板文件 [backend/scripts/makerhub-backend.service](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/makerhub-backend.service)，按你的服务器实际用户和目录修改后执行：

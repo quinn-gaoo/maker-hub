@@ -14,6 +14,14 @@ type CompleteResponse = {
   code?: string;
 };
 
+type OAuthStateRecord = {
+  provider: "google" | "github";
+  state: string;
+  verifier: string;
+  redirectUri: string;
+  callbackUrl: string;
+};
+
 function resolveDestination(provider: string, callbackUrl: string | undefined, fallbackUrl: string | null) {
   const callbackPath = `/login/oauth/${provider}`;
   const fallback = fallbackUrl || "/";
@@ -45,6 +53,7 @@ export function OAuthCallbackClient({ provider }: OAuthCallbackClientProps) {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const error = searchParams.get("error");
+    const storedRaw = typeof window !== "undefined" ? window.sessionStorage.getItem("makerhub-oauth-state") : null;
 
     if (error) {
       setMessage(`第三方登录失败：${error}`);
@@ -53,6 +62,25 @@ export function OAuthCallbackClient({ provider }: OAuthCallbackClientProps) {
 
     if (!code || !state) {
       setMessage("缺少必要的授权参数，无法完成登录。");
+      return;
+    }
+
+    let stored: OAuthStateRecord | null = null;
+    if (storedRaw) {
+      try {
+        stored = JSON.parse(storedRaw) as OAuthStateRecord;
+      } catch {
+        stored = null;
+      }
+    }
+
+    if (!stored || stored.provider !== provider) {
+      setMessage("登录状态已失效，请重新发起第三方登录。");
+      return;
+    }
+
+    if (stored.state !== state) {
+      setMessage("授权状态校验失败，请重新发起第三方登录。");
       return;
     }
 
@@ -65,7 +93,12 @@ export function OAuthCallbackClient({ provider }: OAuthCallbackClientProps) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, state }),
+      body: JSON.stringify({
+        code,
+        code_verifier: stored.verifier,
+        callback_url: stored.callbackUrl,
+        redirect_uri: stored.redirectUri,
+      }),
     })
       .then(async (response) => {
         const payload = (await response.json().catch(() => null)) as CompleteResponse | null;
@@ -80,6 +113,7 @@ export function OAuthCallbackClient({ provider }: OAuthCallbackClientProps) {
         }
         if (typeof window !== "undefined") {
           window.sessionStorage.removeItem("makerhub-oauth-callback-url");
+          window.sessionStorage.removeItem("makerhub-oauth-state");
         }
         router.replace(resolveDestination(provider, payload?.callbackUrl, fallbackUrl));
         router.refresh();

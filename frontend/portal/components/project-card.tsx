@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Eye, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { ProjectCard as ProjectCardType } from "@/types";
 
 type ProjectCardProps = {
@@ -17,9 +18,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
       >
         <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
           {project.isOfficial ? (
-            <span className="rounded-full bg-amber-400 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#2b1804] shadow-sm">
-              官方收录
-            </span>
+            <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-amber-700 shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+              官网收录
+            </Badge>
           ) : null}
           {project.tags.slice(0, 2).map((tag) => (
             <span key={tag.id} className="rounded-full bg-white/86 px-2.5 py-1 font-mono text-[11px] font-semibold text-foreground shadow-sm backdrop-blur dark:bg-black/80 dark:text-white">
