@@ -2,9 +2,11 @@
 
 AI 创作者作品宣传站 MVP，采用前后端分离架构：
 
-- `apps/web`: Next.js 15 + Auth.js 前端与 BFF
-- `apps/api`: FastAPI + SQLAlchemy + Alembic 后端，项目图片上传到腾讯云 COS
+- `apps/frontend/portal`: 门户网站，Next.js 15
+- `apps/frontend/admin`: 管理后台，Vite + TypeScript + React
+- `apps/backend`: FastAPI + SQLAlchemy + Alembic 后端，项目图片上传到腾讯云 COS
 - `packages/shared`: 前端共享常量
+- `packages/ui`: 共享 shadcn UI 基础组件
 
 ## 快速开始
 
@@ -17,14 +19,20 @@ pnpm install
 2. 初始化后端虚拟环境与依赖
 
 ```bash
-cd apps/api
+cd apps/backend
 uv sync
+```
+
+或直接在仓库根目录运行：
+
+```bash
+pnpm run sync:backend
 ```
 
 3. 配置环境变量
 
-- 前端参考 [apps/web/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/apps/web/.env.example)
-- 后端参考 [apps/api/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/apps/api/.env.example)
+- 门户前端参考 [apps/frontend/portal/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/apps/frontend/portal/.env.example)
+- 后端参考 [apps/backend/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/apps/backend/.env.example)
 
 后端图片上传当前使用腾讯云 COS，至少需要配置：
 
@@ -55,8 +63,9 @@ EMAIL_VERIFICATION_CODE_COOLDOWN_SECONDS=60
 4. 启动开发服务
 
 ```bash
-pnpm dev:web
-pnpm dev:api
+pnpm dev:portal
+pnpm dev:admin
+pnpm dev:backend
 ```
 
 ## 数据库
@@ -64,6 +73,6 @@ pnpm dev:api
 后端使用 Alembic 管理数据库结构：
 
 ```bash
-cd apps/api
+cd apps/backend
 ./.venv/bin/alembic upgrade head
 ```

@@ -3,12 +3,15 @@
   "private": true,
   "packageManager": "pnpm@10.7.1",
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:api": "cd apps/api && ./.venv/bin/uvicorn app.main:app --reload",
-    "build:web": "pnpm --filter web build",
-    "lint:web": "pnpm --filter web lint",
-    "typecheck:web": "pnpm --filter web typecheck",
-    "check:api": "cd apps/api && ./.venv/bin/python -m compileall app",
-    "test:api": "cd apps/api && ./.venv/bin/pytest"
+    "dev:portal": "pnpm --filter portal dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "sync:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv sync",
+    "dev:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv run uvicorn app.main:app --reload",
+    "build:portal": "pnpm --filter portal build",
+    "build:admin": "pnpm --filter admin build",
+    "typecheck:portal": "pnpm --filter portal typecheck",
+    "typecheck:admin": "pnpm --filter admin typecheck",
+    "check:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv run python -m compileall app",
+    "test:backend": "cd apps/backend && UV_CACHE_DIR=../../.uv-cache uv run pytest"
   }
 }

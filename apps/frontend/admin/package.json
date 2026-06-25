@@ -1,0 +1,30 @@
+{
+  "name": "admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3001",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 3001",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@makerhub/shared": "workspace:*",
+    "@makerhub/ui": "workspace:*",
+    "lucide-react": "^1.21.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.7.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.0"
+  }
+}
