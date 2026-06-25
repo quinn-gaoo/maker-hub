@@ -116,11 +116,11 @@ uv run alembic upgrade head
 
 ## 服务器部署后端
 
-推荐把项目部署到类似 `/srv/makerhub` 的目录，然后执行：
+推荐把项目部署到 `/www/wwwroot/maker-hub`，然后执行：
 
 ```bash
-git clone <你的仓库地址> /srv/makerhub
-cd /srv/makerhub/backend
+git clone <你的仓库地址> /www/wwwroot/maker-hub
+cd /www/wwwroot/maker-hub/backend
 cp .env.example .env
 ```
 
@@ -130,7 +130,7 @@ cp .env.example .env
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc
 
-cd /srv/makerhub/backend
+cd /www/wwwroot/maker-hub/backend
 uv sync
 uv run alembic upgrade head
 ```
@@ -138,14 +138,14 @@ uv run alembic upgrade head
 启动前可以先手动验证：
 
 ```bash
-cd /srv/makerhub/backend
+cd /www/wwwroot/maker-hub/backend
 uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 仓库里提供了 `systemd` 模板文件 [backend/scripts/makerhub-backend.service](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/makerhub-backend.service)，按你的服务器实际用户和目录修改后执行：
 
 ```bash
-sudo cp /srv/makerhub/backend/scripts/makerhub-backend.service /etc/systemd/system/makerhub-backend.service
+sudo cp /www/wwwroot/maker-hub/backend/scripts/makerhub-backend.service /etc/systemd/system/makerhub-backend.service
 sudo systemctl daemon-reload
 sudo systemctl enable makerhub-backend
 sudo systemctl start makerhub-backend
@@ -157,4 +157,35 @@ sudo systemctl status makerhub-backend
 ```bash
 sudo systemctl restart makerhub-backend
 sudo journalctl -u makerhub-backend -f
+```
+
+## GitHub 自动部署
+
+可以直接使用 [`.github/workflows/deploy-backend.yml`](/Users/quinn/work/quinn-gaoo/MakerHub/.github/workflows/deploy-backend.yml) 让 GitHub 在 `main` 分支更新后自动部署后端。
+
+需要在仓库 Secrets 里配置：
+
+```text
+DEPLOY_HOST
+DEPLOY_USER
+DEPLOY_SSH_KEY
+DEPLOY_PORT
+DEPLOY_PATH
+```
+
+服务器默认按 `/www/wwwroot/maker-hub/backend` 部署，`DEPLOY_PATH` 不填时会回落到 `/www/wwwroot/maker-hub`。工作流会登录服务器后调用 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，脚本会执行 `git pull --ff-only`、`uv sync`、`uv run alembic upgrade head`，然后重启 `makerhub-backend`。
+
+也可以在服务器上单独执行同一个脚本：
+
+```bash
+cd /www/wwwroot/maker-hub
+sh backend/scripts/deploy_backend.sh
+```
+
+可选环境变量：
+
+```text
+DEPLOY_BRANCH=main
+BACKEND_SERVICE=makerhub-backend
+UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
 ```
