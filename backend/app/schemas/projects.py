@@ -46,7 +46,6 @@ class ProjectUpdate(ProjectBase):
 
 
 class AdminProjectCreate(ProjectBase):
-    owner_user_id: str = Field(alias="ownerUserId")
     is_official: bool = Field(default=False, alias="isOfficial")
 
 

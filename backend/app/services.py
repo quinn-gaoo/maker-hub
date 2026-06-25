@@ -60,6 +60,7 @@ VALID_REACTIONS = {REACTION_UPVOTE, REACTION_DOWNVOTE}
 ADMIN_ALLOWED_USER_STATUSES = {"active", "banned"}
 ADMIN_ALLOWED_PROJECT_STATUSES = {"published", "hidden", "deleted"}
 ADMIN_ALLOWED_FEEDBACK_STATUSES = {"new", "reviewed", "resolved"}
+OFFICIAL_USER_ID = "makerhub-official"
 
 
 def slugify(value: str) -> str:
@@ -266,6 +267,7 @@ def list_projects(
     tag: str | None = None,
     user: str | None = None,
     q: str | None = None,
+    official: bool | None = None,
     sort: str = "latest",
     current_user_id: str | None = None,
 ) -> tuple[list[ProjectCardResponse], int]:
@@ -302,6 +304,9 @@ def list_projects(
 
     if q:
         base_query = base_query.where(or_(Project.title.ilike(f"%{q}%"), Project.description.ilike(f"%{q}%")))
+
+    if official is not None:
+        base_query = base_query.where(Project.is_official.is_(official))
 
     if sort == "top":
         base_query = base_query.order_by(
@@ -430,7 +435,21 @@ def create_project(db: Session, user_id: str, payload: ProjectCreate) -> Project
 
 
 def create_admin_project(db: Session, payload: AdminProjectCreate) -> ProjectDetailResponse:
-    owner = get_user_or_404(db, payload.owner_user_id)
+    owner = db.get(User, OFFICIAL_USER_ID)
+    if not owner:
+        owner = User(
+            id=OFFICIAL_USER_ID,
+            name="MakerHub Official",
+            username="makerhub",
+            email=None,
+            image=None,
+            avatar_url=None,
+            bio="MakerHub 官方收录账号。",
+            status="active",
+            role="admin",
+        )
+        db.add(owner)
+        db.flush()
     images = validate_project_urls([str(image) for image in payload.images])
     project = Project(
         user_id=owner.id,

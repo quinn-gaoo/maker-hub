@@ -45,6 +45,7 @@ def get_projects(
     tag: str | None = None,
     user: str | None = None,
     q: str | None = None,
+    official: bool | None = Query(default=None),
     sort: str = Query(default="latest", pattern="^(latest|top|discussed)$"),
     db: Session = Depends(get_db),
     current_user: AuthenticatedUser | None = Depends(get_session_user),
@@ -56,6 +57,7 @@ def get_projects(
         tag=tag,
         user=user,
         q=q,
+        official=official,
         sort=sort,
         current_user_id=current_user.user_id if current_user else None,
     )

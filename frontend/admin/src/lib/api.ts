@@ -132,7 +132,6 @@ export async function updateAdminUser(
 }
 
 export async function createOfficialProject(payload: {
-  ownerUserId: string;
   title: string;
   description: string;
   projectUrl: string;
