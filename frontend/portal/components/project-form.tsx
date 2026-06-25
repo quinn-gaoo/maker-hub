@@ -6,18 +6,17 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Bell, Plus, Save, Upload, X } from "lucide-react";
 import { z } from "zod";
 
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   MAX_PROJECT_IMAGES,
   MAX_TAG_LENGTH,
   MAX_TAGS,
   MAX_TITLE_LENGTH,
   MIN_PROJECT_IMAGES,
-} from "@makerhub/shared";
-
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type ProjectFormProps = {

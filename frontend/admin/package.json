@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@makerhub/shared": "workspace:*",
     "@makerhub/ui": "workspace:*",
     "lucide-react": "^1.21.0",
     "react": "^19.0.0",

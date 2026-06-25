@@ -5,10 +5,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Send, Trash2 } from "lucide-react";
 
-import { MAX_COMMENT_LENGTH } from "@makerhub/shared";
-
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_COMMENT_LENGTH } from "@/lib/constants";
 import type { CommentItem } from "@/types";
 
 type CommentSectionProps = {

@@ -5,4 +5,3 @@ export const MAX_TITLE_LENGTH = 120;
 export const MAX_DESCRIPTION_LENGTH = 5000;
 export const MAX_TAGS = 8;
 export const MAX_TAG_LENGTH = 24;
-

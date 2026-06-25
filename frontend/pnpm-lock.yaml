@@ -6,16 +6,11 @@ settings:
 
 importers:
 
-  .: {}
-
-  apps/frontend/admin:
+  admin:
     dependencies:
-      '@makerhub/shared':
-        specifier: workspace:*
-        version: link:../../../packages/shared
       '@makerhub/ui':
         specifier: workspace:*
-        version: link:../../../packages/ui
+        version: link:../components
       lucide-react:
         specifier: ^1.21.0
         version: 1.21.0(react@19.2.7)
@@ -54,14 +49,29 @@ importers:
         specifier: ^7.0.0
         version: 7.3.6(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)
 
-  apps/frontend/portal:
+  components:
     dependencies:
-      '@makerhub/shared':
-        specifier: workspace:*
-        version: link:../../../packages/shared
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+      tailwind-merge:
+        specifier: ^3.6.0
+        version: 3.6.0
+
+  portal:
+    dependencies:
       '@makerhub/ui':
         specifier: workspace:*
-        version: link:../../../packages/ui
+        version: link:../components
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.18
         version: 2.1.18(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -114,26 +124,6 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
-
-  packages/shared: {}
-
-  packages/ui:
-    dependencies:
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-      tailwind-merge:
-        specifier: ^3.6.0
-        version: 3.6.0
 
 packages:
 

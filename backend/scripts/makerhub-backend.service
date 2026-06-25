@@ -7,10 +7,10 @@ Wants=network.target
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/srv/makerhub/apps/backend
+WorkingDirectory=/srv/makerhub/backend
 Environment=UV_CACHE_DIR=/srv/makerhub/.uv-cache
-EnvironmentFile=/srv/makerhub/apps/backend/.env
-ExecStart=/root/.local/bin/uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+EnvironmentFile=/srv/makerhub/backend/.env
+ExecStart=/usr/bin/env uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=5
 TimeoutStartSec=30

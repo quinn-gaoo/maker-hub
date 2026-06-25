@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @source "./";
-@source "../../../packages/ui/src";
+@source "../../components/src";
 
 @theme inline {
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;

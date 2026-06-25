@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@makerhub/shared"],
+  transpilePackages: ["@makerhub/ui"],
 };
 
 export default nextConfig;
-
