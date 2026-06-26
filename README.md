@@ -116,33 +116,36 @@ uv run alembic upgrade head
 
 ## 服务器部署后端
 
-可以把项目部署到任意目录，例如 `/www/wwwroot/maker-hub` 或 `~/maker-hub`。下面以 `/www/wwwroot/maker-hub` 为例：
+推荐使用 Docker Compose 部署后端和 PostgreSQL，并把数据库和后端拆成两个 compose 文件。数据库低频执行，后端每次部署只更新后端服务。项目可以放到任意目录，例如 `/www/wwwroot/maker-hub` 或 `~/maker-hub`。下面以 `/www/wwwroot/maker-hub` 为例：
 
 ```bash
 git clone <你的仓库地址> /www/wwwroot/maker-hub
 cd /www/wwwroot/maker-hub/backend
-cp .env.example .env
+cp .env.docker.example .env
 ```
 
-安装 `uv` 并同步依赖：
+编辑 `backend/.env`，至少填好 `INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。使用 compose 自带 PostgreSQL 时，后端 compose 会默认使用下面这个容器内数据库地址：
+
+```text
+DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/makerhub
+```
+
+如果要连接外部数据库，可以在执行部署脚本时通过服务器环境变量覆盖 `DATABASE_URL`。
+
+如果服务器之前启过 systemd 版后端，第一次切换 Docker Compose 前建议先停掉旧服务，避免 8000 端口冲突：
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.bashrc
-
-cd /www/wwwroot/maker-hub/backend
-uv sync
-uv run alembic upgrade head
+sudo systemctl disable --now makerhub-backend || true
 ```
 
-启动前可以先手动验证：
+第一次部署或数据库需要维护时，单独启动数据库：
 
 ```bash
-cd /www/wwwroot/maker-hub/backend
-uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+cd /www/wwwroot/maker-hub
+docker compose -f docker-compose.db.yml up -d
 ```
 
-仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录、渲染 systemd 配置、同步依赖、执行迁移并重启服务：
+仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后只执行后端 compose。后端服务使用公开的 `ghcr.io/astral-sh/uv:python3.13-bookworm-slim` 镜像，并把本地 `backend` 目录挂载到容器 `/app`；容器启动时会自动同步依赖并执行 Alembic 迁移：
 
 ```bash
 cd /www/wwwroot/maker-hub
@@ -152,8 +155,10 @@ sh backend/scripts/deploy_backend.sh
 常用运维命令：
 
 ```bash
-sudo systemctl restart makerhub-backend
-sudo journalctl -u makerhub-backend -f
+docker compose -f docker-compose.db.yml ps
+docker compose -f docker-compose.backend.yml ps
+docker compose -f docker-compose.backend.yml logs -f backend
+docker compose -f docker-compose.backend.yml restart backend
 ```
 
 ## GitHub 自动部署
@@ -177,9 +182,7 @@ DEPLOY_WORKDIR=/www/wwwroot/maker-hub
 
 `DEPLOY_SSH_KEY` 里要放私钥原文，不要放 `.pub` 公钥，也不要包一层引号。常见格式是以 `-----BEGIN OPENSSH PRIVATE KEY-----` 或 `-----BEGIN RSA PRIVATE KEY-----` 开头的完整内容。
 
-部署前先确认服务器上的 [backend/.env](/Users/quinn/work/quinn-gaoo/MakerHub/backend/.env.example) 已经从 `backend/.env.example` 复制出来并填好必填项，尤其是 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。
-
-`deploy_backend.sh` 会自动选择服务运行用户，优先使用 `backend` 目录的拥有者，例如项目放在 `/home/github-deploy/maker-hub` 时会优先使用 `github-deploy`，这样 systemd 有权限进入 `WorkingDirectory`。如果你想手动指定，可以在服务器上执行时额外设置 `DEPLOY_SERVICE_USER` 和 `DEPLOY_SERVICE_GROUP`。
+部署前先确认服务器上的 `backend/.env` 已经从 [backend/.env.docker.example](/Users/quinn/work/quinn-gaoo/MakerHub/backend/.env.docker.example) 复制出来并填好必填项，尤其是 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。
 
 也可以在服务器上单独执行同一个脚本：
 
@@ -192,6 +195,6 @@ sh backend/scripts/deploy_backend.sh
 
 ```text
 DEPLOY_BRANCH=main
-BACKEND_SERVICE=makerhub-backend
-UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+COMPOSE_FILE=docker-compose.backend.yml
+BACKEND_SERVICE=backend
 ```

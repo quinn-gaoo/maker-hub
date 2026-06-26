@@ -1,21 +1,31 @@
+name: makerhub-db
+
 services:
   postgres:
     image: postgres:16
     container_name: makerhub-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: makerhub
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-makerhub}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      makerhub:
+        aliases:
+          - postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d makerhub"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+networks:
+  makerhub:
+    name: makerhub_network
 
 volumes:
   postgres_data:
