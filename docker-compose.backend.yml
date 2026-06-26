@@ -2,7 +2,7 @@ name: makerhub-backend
 
 services:
   backend:
-    image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+    image: python:3.14-slim
     container_name: makerhub-backend
     restart: unless-stopped
     working_dir: /app
@@ -12,6 +12,8 @@ services:
       UV_SYSTEM_CERTS: "1"
       UV_LINK_MODE: copy
       UV_DEFAULT_INDEX: https://pypi.tuna.tsinghua.edu.cn/simple
+      PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
+      PIP_TRUSTED_HOST: pypi.tuna.tsinghua.edu.cn
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@postgres:5432/makerhub}
     command: sh scripts/docker-entrypoint.sh
     ports:

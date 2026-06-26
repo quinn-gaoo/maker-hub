@@ -145,7 +145,7 @@ cd /www/wwwroot/maker-hub
 docker compose -f docker-compose.db.yml up -d
 ```
 
-仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后只执行后端 compose。后端服务使用公开的 `ghcr.io/astral-sh/uv:python3.13-bookworm-slim` 镜像，并把本地 `backend` 目录挂载到容器 `/app`；容器启动时会自动同步依赖并执行 Alembic 迁移：
+仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后只执行后端 compose。后端服务使用公开的 `python:3.14-slim` 镜像，并把本地 `backend` 目录挂载到容器 `/app`；容器启动时会先安装 `uv`，再自动同步依赖并执行 Alembic 迁移：
 
 ```bash
 cd /www/wwwroot/maker-hub

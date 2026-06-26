@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
+if ! command -v uv >/dev/null 2>&1; then
+  python -m pip install --no-cache-dir uv
+fi
+
 uv sync --frozen --no-dev
 
 if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
