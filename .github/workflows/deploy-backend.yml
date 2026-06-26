@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - "backend/**"
-      - "docker-compose.backend.yml"
       - ".github/workflows/deploy-backend.yml"
 
 concurrency:
