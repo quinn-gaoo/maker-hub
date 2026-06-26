@@ -17,7 +17,20 @@ run_as_root() {
   if [ "$(id -u)" -eq 0 ]; then
     "$@"
   else
-    sudo "$@"
+    sudo -n "$@"
+  fi
+}
+
+require_non_interactive_sudo() {
+  if [ "$(id -u)" -eq 0 ]; then
+    return
+  fi
+
+  if ! sudo -n true 2>/dev/null; then
+    echo "This deploy script needs passwordless sudo for systemd operations." >&2
+    echo "Configure sudoers for the deploy user, then rerun. Example:" >&2
+    echo "$(id -un) ALL=(ALL) NOPASSWD: /bin/cp, /bin/systemctl, /usr/bin/systemctl, /usr/bin/journalctl" >&2
+    exit 1
   fi
 }
 
@@ -42,21 +55,8 @@ detect_service_user() {
   printf '%s' "$(id -un)"
 }
 
-service_exists() {
-  run_as_root systemctl list-unit-files "$BACKEND_SERVICE.service" --no-legend 2>/dev/null | grep -q "^$BACKEND_SERVICE.service"
-}
-
 cd "$REPO_DIR"
-if service_exists; then
-  if run_as_root systemctl is-active --quiet "$BACKEND_SERVICE"; then
-    echo "$BACKEND_SERVICE is active, stopping it before deployment..."
-    run_as_root systemctl stop "$BACKEND_SERVICE"
-  else
-    echo "$BACKEND_SERVICE exists but is not active."
-  fi
-else
-  echo "$BACKEND_SERVICE is not installed yet."
-fi
+require_non_interactive_sudo
 
 if [ "$SKIP_GIT_PULL" != "1" ]; then
   git fetch origin "$DEPLOY_BRANCH"
@@ -101,13 +101,13 @@ sed \
 
 run_as_root cp "$rendered_service" "$SYSTEMD_SERVICE_TARGET"
 run_as_root systemctl daemon-reload
-run_as_root systemctl enable "$BACKEND_SERVICE"
+run_as_root systemctl disable "$BACKEND_SERVICE" >/dev/null 2>&1 || true
 run_as_root systemctl reset-failed "$BACKEND_SERVICE" >/dev/null 2>&1 || true
 
 UV_SYSTEM_CERTS=1 uv sync
 uv run alembic upgrade head
 
-if ! run_as_root systemctl start "$BACKEND_SERVICE"; then
+if ! run_as_root systemctl restart "$BACKEND_SERVICE"; then
   run_as_root systemctl status "$BACKEND_SERVICE" --no-pager -l || true
   run_as_root journalctl -u "$BACKEND_SERVICE" -n 120 --no-pager || true
   exit 1

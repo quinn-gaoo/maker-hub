@@ -145,7 +145,19 @@ source ~/.bashrc
 uv --version
 ```
 
-仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，同步依赖、执行 Alembic 迁移、渲染 systemd 服务并重启后端：
+仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后按固定流程执行：拉取代码、同步依赖和数据库迁移、重启后端服务。脚本不会设置开机自启，并会清理之前可能存在的自启链接。
+
+GitHub Actions 自动部署时不能输入 sudo 密码，所以部署用户需要配置免密 sudo。以 `github-deploy` 为例：
+
+```bash
+sudo visudo
+```
+
+加入：
+
+```text
+github-deploy ALL=(ALL) NOPASSWD: /bin/cp, /bin/systemctl, /usr/bin/systemctl, /usr/bin/journalctl
+```
 
 ```bash
 cd /www/wwwroot/maker-hub
