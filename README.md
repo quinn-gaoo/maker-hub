@@ -172,7 +172,7 @@ DEPLOY_SSH_KEY
 DEPLOY_WORKDIR
 ```
 
-工作流只负责登录服务器，然后进入 `DEPLOY_WORKDIR` 并执行当前目录下的 `backend/scripts/deploy_backend.sh`。例如：
+工作流只负责登录服务器，然后进入 `DEPLOY_WORKDIR` 并执行当前目录下的 `backend/scripts/deploy_backend.sh`。脚本会把 systemd 模板里的 `__BACKEND_DIR__` 替换为当前仓库里的 `backend` 目录，所以 `WorkingDirectory` 和 `EnvironmentFile` 会自动指向实际部署目录。例如：
 
 ```text
 DEPLOY_WORKDIR=/www/wwwroot/maker-hub

@@ -64,6 +64,7 @@ trap 'rm -f "$rendered_service"' EXIT
 sed \
   -e "s/^User=.*/User=$SERVICE_USER/" \
   -e "s/^Group=.*/Group=$SERVICE_GROUP/" \
+  -e "s|__BACKEND_DIR__|$BACKEND_DIR|g" \
   "$SYSTEMD_SERVICE_FILE" > "$rendered_service"
 
 run_as_root cp "$rendered_service" "$SYSTEMD_SERVICE_TARGET"
