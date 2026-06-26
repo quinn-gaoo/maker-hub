@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.db.session import SessionLocal
+from app.db.session import get_session_local
 from app.models.comment import Comment
 from app.models.project import Project, ProjectImage
 from app.models.project_reaction import ProjectReaction
@@ -187,7 +187,7 @@ def create_activity(db, projects: list[Project], users: list[User]) -> None:
 
 
 def main() -> None:
-    with SessionLocal() as db:
+    with get_session_local()() as db:
         reset_seed_data(db)
         tags = get_or_create_seed_tags(db)
         users = create_users(db)

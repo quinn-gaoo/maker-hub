@@ -1,10 +1,17 @@
+from functools import lru_cache
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
 
-settings = get_settings()
 
-engine = create_engine(settings.database_url, future=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+@lru_cache
+def get_engine():
+    settings = get_settings()
+    return create_engine(settings.database_url, future=True)
 
+
+@lru_cache
+def get_session_local():
+    return sessionmaker(bind=get_engine(), autoflush=False, autocommit=False, future=True)

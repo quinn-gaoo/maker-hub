@@ -1,6 +1,20 @@
+from pathlib import Path
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_ENV_FILE_PATH = Path(__file__).resolve().parents[2] / ".env"
+REQUIRED_NON_EMPTY_SETTINGS = (
+    "database_url",
+    "internal_api_signing_secret",
+    "auth_session_secret",
+    "cos_secret_id",
+    "cos_secret_key",
+    "cos_bucket",
+    "cos_region",
+    "cos_public_base_url",
+)
 
 
 class Settings(BaseSettings):
@@ -36,7 +50,14 @@ class Settings(BaseSettings):
     cos_region: str
     cos_public_base_url: str
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator(*REQUIRED_NON_EMPTY_SETTINGS)
+    @classmethod
+    def validate_non_empty_setting(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("不能为空。")
+        return value
 
     @property
     def admin_email_list(self) -> list[str]:
@@ -48,6 +69,10 @@ class Settings(BaseSettings):
         return email.strip().lower() in set(self.admin_email_list)
 
 
+def get_env_file_path() -> Path:
+    return DEFAULT_ENV_FILE_PATH
+
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings(_env_file=get_env_file_path())

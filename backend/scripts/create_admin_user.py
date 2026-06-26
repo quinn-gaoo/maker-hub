@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 
 from app.core.auth import hash_password
 from app.core.config import get_settings
-from app.db.session import SessionLocal
+from app.db.session import get_session_local
 from app.models.user import User
 
 
@@ -35,7 +35,7 @@ def main() -> None:
         raise SystemExit("Password must be at least 8 characters.")
 
     settings = get_settings()
-    with SessionLocal() as db:
+    with get_session_local()() as db:
         user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
         if user is None:
             user = User(

@@ -9,7 +9,7 @@ from fastapi import Request
 from app.core.security import verify_internal_user
 from app.models.auth import Session as AuthSession
 from app.models.user import User
-from app.db.session import SessionLocal
+from app.db.session import get_session_local
 
 
 class DummyReceive:
@@ -52,7 +52,7 @@ def test_verify_internal_user_accepts_valid_signature(monkeypatch):
 def test_verify_internal_user_allows_admin_cookie_without_internal_headers(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite+pysqlite:///:memory:")
     monkeypatch.setenv("INTERNAL_API_SIGNING_SECRET", "secret")
-    with SessionLocal() as db:
+    with get_session_local()() as db:
         # This test only validates the auth fallback contract.
         user = User(id="admin-1", email="admin@example.com", name="Admin", role="admin", status="active")
         session = AuthSession(session_token="session-1", user_id="admin-1", expires=time.gmtime())
