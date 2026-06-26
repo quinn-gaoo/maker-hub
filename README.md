@@ -116,7 +116,7 @@ uv run alembic upgrade head
 
 ## 服务器部署后端
 
-推荐使用 Docker Compose 部署后端和 PostgreSQL，并把数据库和后端拆成两个 compose 文件。数据库低频执行，后端每次部署只更新后端服务。项目可以放到任意目录，例如 `/www/wwwroot/maker-hub` 或 `~/maker-hub`。下面以 `/www/wwwroot/maker-hub` 为例：
+推荐使用 Docker Compose 部署后端。数据库可以是其他服务器上的 PostgreSQL，后端只会读取 `backend/.env` 里的 `DATABASE_URL` 连接数据库。项目可以放到任意目录，例如 `/www/wwwroot/maker-hub` 或 `~/maker-hub`。下面以 `/www/wwwroot/maker-hub` 为例：
 
 ```bash
 git clone <你的仓库地址> /www/wwwroot/maker-hub
@@ -124,13 +124,11 @@ cd /www/wwwroot/maker-hub/backend
 cp .env.docker.example .env
 ```
 
-编辑 `backend/.env`，至少填好 `INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。使用 compose 自带 PostgreSQL 时，后端 compose 会默认使用下面这个容器内数据库地址：
+编辑 `backend/.env`，至少填好 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。`DATABASE_URL` 就写你真实数据库地址：
 
 ```text
-DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/makerhub
+DATABASE_URL=postgresql+psycopg://用户名:密码@数据库地址:5432/数据库名
 ```
-
-如果要连接外部数据库，可以在执行部署脚本时通过服务器环境变量覆盖 `DATABASE_URL`。
 
 如果服务器之前启过 systemd 版后端，第一次切换 Docker Compose 前建议先停掉旧服务，避免 8000 端口冲突：
 
@@ -138,7 +136,7 @@ DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/makerhub
 sudo systemctl disable --now makerhub-backend || true
 ```
 
-第一次部署或数据库需要维护时，单独启动数据库：
+如果你确实想在当前服务器上额外启动一个 PostgreSQL，可以单独执行数据库 compose；使用外部数据库时不需要执行它：
 
 ```bash
 cd /www/wwwroot/maker-hub
@@ -155,7 +153,6 @@ sh backend/scripts/deploy_backend.sh
 常用运维命令：
 
 ```bash
-docker compose -f docker-compose.db.yml ps
 docker compose -f docker-compose.backend.yml ps
 docker compose -f docker-compose.backend.yml logs -f backend
 docker compose -f docker-compose.backend.yml restart backend
