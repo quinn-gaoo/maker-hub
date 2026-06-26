@@ -17,38 +17,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/www/wwwroot/maker-hub' }}
+      DEPLOY_WORKDIR: ${{ secrets.DEPLOY_WORKDIR }}
 
     steps:
-      - name: Prepare SSH key
-        shell: bash
-        env:
-          SSH_KEY_RAW: ${{ secrets.DEPLOY_SSH_KEY }}
-          SSH_KEY_BASE64: ${{ secrets.DEPLOY_SSH_KEY_BASE64 }}
-        run: |
-          key_file="$RUNNER_TEMP/deploy_key"
-          if [ -n "$SSH_KEY_BASE64" ]; then
-            printf '%s' "$SSH_KEY_BASE64" | base64 --decode > "$key_file"
-          else
-            printf '%s' "$SSH_KEY_RAW" | tr -d '\r' > "$key_file"
-          fi
-          if ! grep -qE '^-----BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY-----$' "$key_file"; then
-            echo "DEPLOY_SSH_KEY is not a valid private key file." >&2
-            exit 1
-          fi
-          chmod 600 "$key_file"
-
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
-          key_path: ${{ runner.temp }}/deploy_key
-          passphrase: ${{ secrets.DEPLOY_SSH_KEY_PASSPHRASE }}
-          port: ${{ env.DEPLOY_PORT }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           script_stop: true
           script: |
             set -euo pipefail
-            cd "${{ env.DEPLOY_PATH }}"
-            DEPLOY_BRANCH=main sh backend/scripts/deploy_backend.sh
+            cd "${{ env.DEPLOY_WORKDIR }}"
+            sh backend/scripts/deploy_backend.sh
