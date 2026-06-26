@@ -1,8 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO_DIR=$(git rev-parse --show-toplevel)
-BACKEND_DIR="$REPO_DIR/backend"
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+BACKEND_DIR=$(CDPATH= cd "$SCRIPT_DIR/.." && pwd -P)
+REPO_DIR=$(CDPATH= cd "$BACKEND_DIR/.." && pwd -P)
 
 DEPLOY_BRANCH=${DEPLOY_BRANCH:-main}
 BACKEND_SERVICE=${BACKEND_SERVICE:-makerhub-backend}
@@ -23,6 +24,18 @@ run_as_root() {
 detect_service_user() {
   if [ -n "$DEPLOY_SERVICE_USER" ]; then
     printf '%s' "$DEPLOY_SERVICE_USER"
+    return
+  fi
+
+  owner=""
+  if owner=$(stat -c '%U' "$BACKEND_DIR" 2>/dev/null); then
+    :
+  elif owner=$(stat -f '%Su' "$BACKEND_DIR" 2>/dev/null); then
+    :
+  fi
+
+  if [ -n "$owner" ] && [ "$owner" != "UNKNOWN" ] && id -u "$owner" >/dev/null 2>&1; then
+    printf '%s' "$owner"
     return
   fi
 

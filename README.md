@@ -116,7 +116,7 @@ uv run alembic upgrade head
 
 ## 服务器部署后端
 
-推荐把项目部署到 `/www/wwwroot/maker-hub`，然后执行：
+可以把项目部署到任意目录，例如 `/www/wwwroot/maker-hub` 或 `~/maker-hub`。下面以 `/www/wwwroot/maker-hub` 为例：
 
 ```bash
 git clone <你的仓库地址> /www/wwwroot/maker-hub
@@ -142,14 +142,11 @@ cd /www/wwwroot/maker-hub/backend
 uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-仓库里提供了 `systemd` 模板文件 [backend/scripts/makerhub-backend.service](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/makerhub-backend.service)，按你的服务器实际用户和目录修改后执行：
+仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录、渲染 systemd 配置、同步依赖、执行迁移并重启服务：
 
 ```bash
-sudo cp /www/wwwroot/maker-hub/backend/scripts/makerhub-backend.service /etc/systemd/system/makerhub-backend.service
-sudo systemctl daemon-reload
-sudo systemctl enable makerhub-backend
-sudo systemctl start makerhub-backend
-sudo systemctl status makerhub-backend
+cd /www/wwwroot/maker-hub
+sh backend/scripts/deploy_backend.sh
 ```
 
 常用运维命令：
@@ -172,7 +169,7 @@ DEPLOY_SSH_KEY
 DEPLOY_WORKDIR
 ```
 
-工作流只负责登录服务器，然后进入 `DEPLOY_WORKDIR` 并执行当前目录下的 `backend/scripts/deploy_backend.sh`。脚本会把 systemd 模板里的 `__BACKEND_DIR__` 替换为当前仓库里的 `backend` 目录，所以 `WorkingDirectory` 和 `EnvironmentFile` 会自动指向实际部署目录。例如：
+工作流只负责登录服务器，然后进入 `DEPLOY_WORKDIR` 并执行当前目录下的 `backend/scripts/deploy_backend.sh`。脚本会从自身位置自动定位当前仓库，不需要在脚本里写死 `/www/wwwroot/maker-hub` 这类路径。例如：
 
 ```text
 DEPLOY_WORKDIR=/www/wwwroot/maker-hub
@@ -182,7 +179,7 @@ DEPLOY_WORKDIR=/www/wwwroot/maker-hub
 
 部署前先确认服务器上的 [backend/.env](/Users/quinn/work/quinn-gaoo/MakerHub/backend/.env.example) 已经从 `backend/.env.example` 复制出来并填好必填项，尤其是 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。
 
-`deploy_backend.sh` 会自动选择服务运行用户，优先 `www-data`，然后 `www`，最后 `root`。如果你想手动指定，可以在服务器上执行时额外设置 `DEPLOY_SERVICE_USER` 和 `DEPLOY_SERVICE_GROUP`。
+`deploy_backend.sh` 会自动选择服务运行用户，优先使用 `backend` 目录的拥有者，例如项目放在 `/home/github-deploy/maker-hub` 时会优先使用 `github-deploy`，这样 systemd 有权限进入 `WorkingDirectory`。如果你想手动指定，可以在服务器上执行时额外设置 `DEPLOY_SERVICE_USER` 和 `DEPLOY_SERVICE_GROUP`。
 
 也可以在服务器上单独执行同一个脚本：
 
