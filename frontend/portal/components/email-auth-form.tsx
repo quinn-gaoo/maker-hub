@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRightCircle, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { AuthSessionResponse } from "@/types";
 
 type Mode = "login" | "register";
 
@@ -16,11 +17,17 @@ type ApiError = {
   cooldownSeconds?: number;
 };
 
+type VerificationCodeResponse = {
+  message: string;
+  cooldownSeconds: number;
+  expiresInSeconds: number;
+};
+
 export function EmailAuthForm() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
-  const [pending, startSubmitTransition] = useTransition();
-  const [sendingCode, startCodeTransition] = useTransition();
+  const [pending, setPending] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,41 +54,49 @@ export function EmailAuthForm() {
     setNotice("");
   }
 
-  function sendVerificationCode() {
+  async function sendVerificationCode() {
+    if (sendingCode) {
+      return;
+    }
+
     setError("");
     setNotice("");
 
-    startCodeTransition(async () => {
-      try {
-        const response = await fetch("/api/auth/email-verification-code", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        });
+    setSendingCode(true);
+    try {
+      const response = await fetch("/api/auth/email-verification-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-        const result = (await response.json().catch(() => null)) as
-          | (ApiError & { cooldownSeconds?: number; expiresInSeconds?: number })
-          | null;
-        if (!response.ok) {
-          const message = result?.fieldErrors?.email ?? result?.message ?? "验证码发送失败。";
-          throw new Error(message);
-        }
-
-        setCooldown(result?.cooldownSeconds ?? 60);
-        setNotice(result?.message ?? "验证码已发送，请查收邮箱。");
-      } catch (submissionError) {
-        setError(submissionError instanceof Error ? submissionError.message : "验证码发送失败。");
+      const result = (await response.json().catch(() => null)) as (VerificationCodeResponse & ApiError) | null;
+      if (!response.ok || typeof result?.cooldownSeconds !== "number" || typeof result?.message !== "string") {
+        const message = result?.fieldErrors?.email ?? result?.message ?? "验证码发送失败。";
+        throw new Error(message);
       }
-    });
+
+      setCooldown(result.cooldownSeconds);
+      setNotice(result.message);
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : "验证码发送失败。");
+    } finally {
+      setSendingCode(false);
+    }
   }
 
-  function submit() {
+  async function submit() {
+    if (pending) {
+      return;
+    }
+
     setError("");
     setNotice("");
 
-    startSubmitTransition(async () => {
+    setPending(true);
+    try {
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
       const payload =
         mode === "login"
@@ -93,32 +108,32 @@ export function EmailAuthForm() {
             verificationCode: verificationCode.trim().toUpperCase(),
           };
 
-      try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-        const result = (await response.json().catch(() => null)) as ApiError | null;
-        if (!response.ok) {
-          const message =
-            result?.fieldErrors?.email ??
-            result?.fieldErrors?.password ??
-            result?.fieldErrors?.verificationCode ??
-            result?.message ??
-            (mode === "login" ? "登录失败。" : "注册失败。");
-          throw new Error(message);
-        }
-
-        router.push("/");
-        router.refresh();
-      } catch (submissionError) {
-        setError(submissionError instanceof Error ? submissionError.message : "提交失败。");
+      const result = (await response.json().catch(() => null)) as (AuthSessionResponse & ApiError) | null;
+      if (!response.ok || !result?.authenticated || !result.user) {
+        const message =
+          result?.fieldErrors?.email ??
+          result?.fieldErrors?.password ??
+          result?.fieldErrors?.verificationCode ??
+          result?.message ??
+          (mode === "login" ? "登录失败。" : "注册失败。");
+        throw new Error(message);
       }
-    });
+
+      router.push("/");
+      router.refresh();
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : "提交失败。");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

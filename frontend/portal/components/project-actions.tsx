@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,24 +15,31 @@ type ProjectActionsProps = {
 
 export function ProjectActions({ projectId }: ProjectActionsProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
-  function handleDelete() {
+  async function handleDelete() {
+    if (pending) {
+      return;
+    }
+
     setError("");
-    startTransition(async () => {
+    setPending(true);
+    try {
       const response = await fetch(`/api/bff/projects/${projectId}`, {
         method: "DELETE",
       });
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok || !payload?.ok) {
         setError(payload?.message ?? "删除失败。");
         return;
       }
 
       router.refresh();
-    });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

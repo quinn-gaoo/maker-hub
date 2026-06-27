@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 
@@ -16,11 +16,20 @@ type ProfileFormProps = {
   profile: UserProfile;
 };
 
+type ProfileUpdateResponse = {
+  id: string;
+  name: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  bio: string | null;
+  message?: string;
+};
+
 const MAX_BIO_LENGTH = 200;
 
 export function ProfileForm({ profile }: ProfileFormProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [name, setName] = useState(profile.name ?? "");
   const [username, setUsername] = useState(profile.username ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? "");
@@ -28,7 +37,11 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   const [error, setError] = useState("");
   const cancelHref = profile.username ? `/u/${profile.username}` : "/";
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (pending) {
+      return;
+    }
+
     setError("");
 
     const payload: UserProfileUpdatePayload = {
@@ -58,7 +71,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       return;
     }
 
-    startTransition(async () => {
+    setPending(true);
+    try {
       const response = await fetch("/api/bff/me/profile", {
         method: "PATCH",
         headers: {
@@ -67,7 +81,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         body: JSON.stringify(payload),
       });
 
-      const result = (await response.json().catch(() => null)) as (UserProfile & { message?: string }) | null;
+      const result = (await response.json().catch(() => null)) as ProfileUpdateResponse | null;
       if (!response.ok || !result?.username) {
         setError(result?.message ?? "个人信息更新失败。");
         return;
@@ -75,7 +89,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
       router.push(`/u/${result.username}`);
       router.refresh();
-    });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

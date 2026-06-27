@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Send, Trash2 } from "lucide-react";
 
@@ -31,9 +31,13 @@ export function CommentSection({
   const router = useRouter();
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
   async function handleSubmit() {
+    if (pending) {
+      return;
+    }
+
     setError("");
 
     const trimmed = content.trim();
@@ -47,7 +51,8 @@ export function CommentSection({
       return;
     }
 
-    startTransition(async () => {
+    setPending(true);
+    try {
       const response = await fetch("/api/bff/comments", {
         method: "POST",
         headers: {
@@ -55,32 +60,42 @@ export function CommentSection({
         },
         body: JSON.stringify({ projectId, content: trimmed }),
       });
+      const payload = (await response.json().catch(() => null)) as (CommentItem & { message?: string }) | null;
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok || !payload?.id) {
         setError(payload?.message ?? "评论发送失败。");
         return;
       }
 
       setContent("");
       router.refresh();
-    });
+    } finally {
+      setPending(false);
+    }
   }
 
   async function handleDelete(commentId: string) {
-    startTransition(async () => {
+    if (pending) {
+      return;
+    }
+
+    setError("");
+    setPending(true);
+    try {
       const response = await fetch(`/api/bff/comments/${commentId}`, {
         method: "DELETE",
       });
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok || !payload?.ok) {
         setError(payload?.message ?? "删除评论失败。");
         return;
       }
 
       router.refresh();
-    });
+    } finally {
+      setPending(false);
+    }
   }
 
   function getDisplayName(comment: CommentItem) {

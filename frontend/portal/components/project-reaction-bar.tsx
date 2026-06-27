@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,42 +24,52 @@ export function ProjectReactionBar({
   isAuthenticated,
   compact = false,
 }: ProjectReactionBarProps) {
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(initialUpvoteCount);
   const [downvoteCount, setDownvoteCount] = useState(initialDownvoteCount);
   const [currentReaction, setCurrentReaction] = useState<"up" | "down" | null>(initialReaction);
   const [error, setError] = useState("");
 
-  function submitReaction(reaction: "up" | "down") {
+  async function submitReaction(reaction: "up" | "down") {
+    if (pending) {
+      return;
+    }
+
     setError("");
+    setPending(true);
+    try {
+      const response = await fetch(`/api/bff/projects/${projectId}/reactions`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reaction }),
+      });
 
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/bff/projects/${projectId}/reactions`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ reaction }),
-        });
+      const payload = (await response.json().catch(() => null)) as
+        | (ProjectReactionResponse & { message?: string })
+        | { message?: string }
+        | null;
 
-        const payload = (await response.json().catch(() => null)) as
-          | (ProjectReactionResponse & { message?: string })
-          | { message?: string }
-          | null;
-
-        if (!response.ok) {
-          throw new Error(payload?.message ?? "操作失败。");
-        }
-
-        setUpvoteCount((payload as ProjectReactionResponse).upvoteCount);
-        setDownvoteCount((payload as ProjectReactionResponse).downvoteCount);
-        setCurrentReaction((payload as ProjectReactionResponse).currentReaction);
-      } catch (submissionError) {
-        setError(submissionError instanceof Error ? submissionError.message : "操作失败。");
+      if (
+        !response.ok ||
+        !payload ||
+        !("upvoteCount" in payload) ||
+        !("downvoteCount" in payload) ||
+        !("currentReaction" in payload)
+      ) {
+        throw new Error(payload?.message ?? "操作失败。");
       }
-    });
+
+      setUpvoteCount(payload.upvoteCount);
+      setDownvoteCount(payload.downvoteCount);
+      setCurrentReaction(payload.currentReaction);
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : "操作失败。");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

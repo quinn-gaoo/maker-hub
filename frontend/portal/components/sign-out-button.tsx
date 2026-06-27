@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from "react";
-import { useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -17,16 +17,25 @@ export const SignOutButton = forwardRef<HTMLButtonElement, SignOutButtonProps>(f
   ref,
 ) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const [pending, setPending] = useState(false);
+
+  const handleClick = async (event: MouseEvent<HTMLButtonElement>) => {
     onClick?.(event);
-    if (!event.defaultPrevented) {
-      startTransition(() => {
-        void fetch("/api/auth/logout", { method: "POST" }).then(() => {
-          router.push("/");
-          router.refresh();
-        });
-      });
+    if (event.defaultPrevented || pending) {
+      return;
+    }
+
+    setPending(true);
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean } | null;
+      if (!response.ok || !result?.ok) {
+        return;
+      }
+      router.push("/");
+      router.refresh();
+    } finally {
+      setPending(false);
     }
   };
 

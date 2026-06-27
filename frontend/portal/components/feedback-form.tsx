@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 
 const MAX_FEEDBACK_LENGTH = 500;
 
+type FeedbackResponse = {
+  id: string;
+  content: string;
+  status: string;
+  createdAt: string;
+  message?: string;
+};
+
 export function FeedbackForm() {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (pending) {
+      return;
+    }
+
     setError("");
     setSuccess("");
 
@@ -29,7 +41,8 @@ export function FeedbackForm() {
       return;
     }
 
-    startTransition(async () => {
+    setPending(true);
+    try {
       const response = await fetch("/api/bff/feedback", {
         method: "POST",
         headers: {
@@ -37,16 +50,18 @@ export function FeedbackForm() {
         },
         body: JSON.stringify({ content: trimmed }),
       });
+      const payload = (await response.json().catch(() => null)) as FeedbackResponse | null;
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok || !payload?.id) {
         setError(payload?.message ?? "反馈提交失败。");
         return;
       }
 
       setContent("");
       setSuccess("已收到，感谢你的反馈。");
-    });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Bell, Plus, Save, Upload, X } from "lucide-react";
@@ -109,7 +109,7 @@ function ImageTile({
 
 export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [projectUrl, setProjectUrl] = useState(initialData?.projectUrl ?? "");
@@ -225,6 +225,10 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
   }
 
   async function handleSubmit() {
+    if (submitting) {
+      return;
+    }
+
     setError("");
 
     const totalImages = existingImages.length + pendingImages.length;
@@ -246,77 +250,81 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
       return;
     }
 
-    startTransition(async () => {
-      try {
-        const draftPayload = JSON.stringify({
-          ...parsed.data,
-          githubUrl: parsed.data.githubUrl || null,
-          images: mode === "edit" ? existingImages : [],
+    setSubmitting(true);
+
+    try {
+      const draftPayload = JSON.stringify({
+        ...parsed.data,
+        githubUrl: parsed.data.githubUrl || null,
+        images: existingImages,
+      });
+
+      const createOrUpdateEndpoint = mode === "create" ? "/api/bff/projects" : `/api/bff/projects/${projectId}`;
+      const createOrUpdateMethod = mode === "create" ? "POST" : "PATCH";
+
+      const response = await fetch(createOrUpdateEndpoint, {
+        method: createOrUpdateMethod,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: draftPayload,
+        credentials: "include",
+      });
+
+      const result = (await response.json().catch(() => null)) as { id?: string; slug?: string; message?: string } | null;
+      if (!response.ok || !result?.slug || !result?.id) {
+        throw new Error(result?.message ?? "项目保存失败");
+      }
+
+      const uploadedImageUrls: string[] = [];
+      for (const image of pendingImages) {
+        const readyFile = await uploadFile(image.file);
+        const uploadResponse = await fetch(`/api/bff/uploads/projects/${result.id}/images`, {
+          method: "POST",
+          headers: {
+            "Content-Type": readyFile.type,
+            "X-File-Name": encodeURIComponent(readyFile.name),
+          },
+          body: readyFile,
+          credentials: "include",
         });
 
-        const createOrUpdateEndpoint = mode === "create" ? "/api/bff/projects" : `/api/bff/projects/${projectId}`;
-        const createOrUpdateMethod = mode === "create" ? "POST" : "PATCH";
+        const uploadPayload = (await uploadResponse.json().catch(() => null)) as { imageUrl?: string; message?: string } | null;
+        if (!uploadResponse.ok || !uploadPayload?.imageUrl) {
+          throw new Error(uploadPayload?.message ?? "图片上传失败");
+        }
+        uploadedImageUrls.push(uploadPayload.imageUrl);
+      }
 
-        const response = await fetch(createOrUpdateEndpoint, {
-          method: createOrUpdateMethod,
+      if (uploadedImageUrls.length > 0) {
+        const patchResponse = await fetch(`/api/bff/projects/${result.id}`, {
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          body: draftPayload,
+          body: JSON.stringify({
+            ...parsed.data,
+            githubUrl: parsed.data.githubUrl || null,
+            images: [...existingImages, ...uploadedImageUrls],
+          }),
+          credentials: "include",
         });
-
-        const result = (await response.json().catch(() => null)) as { id?: string; slug?: string; message?: string } | null;
-        if (!response.ok || !result?.slug || !result?.id) {
-          throw new Error(result?.message ?? "项目保存失败");
+        const patched = (await patchResponse.json().catch(() => null)) as { id?: string; message?: string } | null;
+        if (!patchResponse.ok || !patched?.id) {
+          throw new Error(patched?.message ?? "项目保存失败");
         }
-
-        const uploadedImageUrls = [];
-        for (const image of pendingImages) {
-          const readyFile = await uploadFile(image.file);
-          const uploadResponse = await fetch(`/api/bff/uploads/projects/${result.id}/images`, {
-            method: "POST",
-            headers: {
-              "Content-Type": readyFile.type,
-              "X-File-Name": encodeURIComponent(readyFile.name),
-            },
-            body: readyFile,
-            credentials: "include",
-          });
-
-          const uploadPayload = (await uploadResponse.json().catch(() => null)) as { imageUrl?: string; message?: string } | null;
-          if (!uploadResponse.ok || !uploadPayload?.imageUrl) {
-            throw new Error(uploadPayload?.message ?? "图片上传失败");
-          }
-          uploadedImageUrls.push(uploadPayload.imageUrl);
-        }
-
-        if (uploadedImageUrls.length > 0) {
-          const patchResponse = await fetch(`/api/bff/projects/${result.id}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ...parsed.data,
-              githubUrl: parsed.data.githubUrl || null,
-              images: [...existingImages, ...uploadedImageUrls],
-            }),
-          });
-          const patched = (await patchResponse.json().catch(() => null)) as { id?: string; message?: string } | null;
-          if (!patchResponse.ok || !patched?.id) {
-            throw new Error(patched?.message ?? "项目保存失败");
-          }
-          router.push(`/projects/${patched.id}`);
-          router.refresh();
-          return;
-        }
-
-        router.push(`/projects/${result.id}`);
+        router.push(`/projects/${patched.id}`);
         router.refresh();
-      } catch (submissionError) {
-        setError(submissionError instanceof Error ? submissionError.message : "项目保存失败");
+        return;
       }
-    });
+
+      router.push(`/projects/${result.id}`);
+      router.refresh();
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : "项目保存失败");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -479,7 +487,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
             取消
           </Link>
         ) : null}
-        <Button disabled={pending} onClick={handleSubmit} className="h-16 rounded-md text-xl font-bold">
+        <Button disabled={submitting} onClick={handleSubmit} className="h-16 rounded-md text-xl font-bold">
           {mode === "create" ? <Bell /> : <Save />}
           {mode === "create" ? "发布项目" : "保存修改"}
         </Button>

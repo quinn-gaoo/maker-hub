@@ -12,7 +12,10 @@ export async function POST() {
     redirect: "manual",
   });
 
-  const nextResponse = NextResponse.json({ ok: true }, { status: response.ok ? 200 : response.status });
-  nextResponse.cookies.set("makerhub_session", "", { expires: new Date(0), path: "/" });
+  const succeeded = response.ok || (response.status >= 300 && response.status < 400);
+  const nextResponse = NextResponse.json({ ok: succeeded }, { status: succeeded ? 200 : response.status });
+  if (succeeded) {
+    nextResponse.cookies.set("makerhub_session", "", { expires: new Date(0), path: "/" });
+  }
   return nextResponse;
 }
