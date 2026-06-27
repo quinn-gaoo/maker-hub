@@ -129,15 +129,15 @@ export function EmailAuthForm() {
         submit();
       }}
     >
-      <div className="inline-flex w-fit rounded-full border border-[#e9ddcb] bg-[#f7f1e8] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+      <div className="inline-flex w-fit rounded-full border border-border bg-secondary p-1">
         <Button
           variant="ghost"
           size="sm"
           disabled={pending || sendingCode}
           onClick={() => switchMode("login")}
           className={cn(
-            "h-11 min-w-[124px] rounded-full px-6 text-[14px] font-semibold text-[#8d826f]  hover:text-foreground",
-            mode === "login" && "bg-white text-foreground shadow-[0_10px_30px_rgba(112,89,63,0.08)]",
+            "h-11 min-w-[124px] rounded-full px-6 text-[14px] font-semibold text-muted-foreground hover:text-foreground",
+            mode === "login" && "bg-background text-foreground shadow-sm",
           )}
         >
           邮箱登录
@@ -148,8 +148,8 @@ export function EmailAuthForm() {
           disabled={pending || sendingCode}
           onClick={() => switchMode("register")}
           className={cn(
-            "h-11 min-w-[124px] rounded-full px-6 text-[14px] font-semibold text-[#8d826f] hover:text-foreground",
-            mode === "register" && "bg-white text-foreground shadow-[0_10px_30px_rgba(112,89,63,0.08)]",
+            "h-11 min-w-[124px] rounded-full px-6 text-[14px] font-semibold text-muted-foreground hover:text-foreground",
+            mode === "register" && "bg-background text-foreground shadow-sm",
           )}
         >
           邮箱注册
@@ -161,12 +161,12 @@ export function EmailAuthForm() {
           <label className="grid gap-2">
             <span className="text-[14px] font-semibold text-foreground">昵称</span>
             <div className="relative">
-              <UserRound className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-[#a89d8d]" />
+              <UserRound className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="例如：Quinn"
-                className="h-14 rounded-[14px] border-[#e6dccb] bg-[#fffdfa] pl-11 pr-4 text-[14px] shadow-none placeholder:text-[#aea390] focus-visible:ring-[#f56a21]/15"
+                className="h-14 rounded-[14px] border-input bg-background pl-11 pr-4 text-[14px] shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/15"
               />
             </div>
           </label>
@@ -175,14 +175,14 @@ export function EmailAuthForm() {
         <label className="grid gap-2">
           <span className="text-[14px] font-semibold text-foreground">邮箱</span>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-[#a89d8d]" />
+            <Mail className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               autoComplete={mode === "login" ? "email" : "username"}
-              className="h-14 rounded-[14px] border-[#e6dccb] bg-[#fffdfa] pl-11 pr-4 text-[14px] shadow-none placeholder:text-[#aea390] focus-visible:ring-[#f56a21]/15"
+              className="h-14 rounded-[14px] border-input bg-background pl-11 pr-4 text-[14px] shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/15"
             />
           </div>
         </label>
@@ -196,11 +196,11 @@ export function EmailAuthForm() {
                 onChange={(event) => setVerificationCode(event.target.value.toUpperCase())}
                 placeholder="例如：MKH-123456"
                 autoComplete="one-time-code"
-                className="h-14 rounded-[14px] border-[#e6dccb] bg-[#fffdfa] px-4 text-[14px] shadow-none placeholder:text-[#aea390] focus-visible:ring-[#f56a21]/15"
+                className="h-14 rounded-[14px] border-input bg-background px-4 text-[14px] shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/15"
               />
               <Button
                 variant="outline"
-                className="h-14 rounded-[14px] border-[#e6dccb] bg-white px-5 text-[14px] font-semibold text-foreground shadow-none hover:bg-[#f8f2e8]"
+                className="h-14 rounded-[14px] border-input bg-background px-5 text-[14px] font-semibold text-foreground shadow-none hover:bg-secondary"
                 disabled={pending || sendingCode || cooldown > 0}
                 onClick={sendVerificationCode}
               >
@@ -213,14 +213,14 @@ export function EmailAuthForm() {
         <label className="grid gap-2">
           <span className="text-[14px] font-semibold text-foreground">密码</span>
           <div className="relative">
-            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-[#a89d8d]" />
+            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={mode === "login" ? "输入密码" : "至少 8 位"}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
-              className="h-14 rounded-[14px] border-[#e6dccb] bg-[#fffdfa] pl-11 pr-4 text-[14px] shadow-none placeholder:text-[#aea390] focus-visible:ring-[#f56a21]/15"
+              className="h-14 rounded-[14px] border-input bg-background pl-11 pr-4 text-[14px] shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/15"
             />
           </div>
         </label>
@@ -231,7 +231,7 @@ export function EmailAuthForm() {
 
       <Button
         type="submit"
-        className="h-14 w-full rounded-[14px] bg-[#f56a21] text-[16px] font-semibold text-white shadow-[0_18px_45px_rgba(245,106,33,0.18)] hover:bg-[#eb611c]"
+        className="h-14 w-full rounded-[14px] bg-primary text-[16px] font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
         disabled={pending || sendingCode}
       >
         <ArrowRightCircle className="size-[18px]" />
