@@ -1,0 +1,26 @@
+[Unit]
+Description=My FastAPI application with uv
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/www/wwwroot/maker-hub/backend
+EnvironmentFile=/www/wwwroot/maker-hub/backend/.env
+
+# 使用 uv run 来执行启动命令
+ExecStart=/root/.local/bin/uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# 或者使用 gunicorn（推荐生产环境）
+# ExecStart=/home/www-data/.local/bin/uv run gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000 app.main:app
+
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 日志管理
+StandardOutput=append:/var/log/maker-hub/access.log
+StandardError=append:/var/log/maker-hub/error.log
+
+[Install]
+WantedBy=multi-user.target

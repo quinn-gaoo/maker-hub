@@ -24,6 +24,7 @@ from app.core.auth import (
 )
 from app.core.config import get_settings
 from app.core.errors import bad_request, service_unavailable, unauthorized
+from app.core.logging import get_logger
 from app.email import send_email
 from app.core.security import AuthenticatedUser, get_session_user
 from app.models.auth import Account, EmailVerificationCode, Session as AuthSession
@@ -42,6 +43,8 @@ from app.services import ensure_user_profile
 
 router = APIRouter(prefix="/auth")
 REGISTER_VERIFICATION_PURPOSE = "register"
+OAUTH_HTTP_TIMEOUT_SECONDS = 20
+logger = get_logger(__name__)
 
 
 def _handle_verification_storage_error(db: Session, exc: ProgrammingError) -> None:
@@ -53,6 +56,64 @@ def _handle_verification_storage_error(db: Session, exc: ProgrammingError) -> No
 
 def _verification_secret() -> str:
     return get_settings().auth_session_secret
+
+
+async def _run_oauth_request(
+    request_coro,
+    *,
+    provider_label: str,
+    action_label: str,
+    request_url: str,
+):
+    try:
+        response = await request_coro
+        response.raise_for_status()
+        return response
+    except httpx.ReadTimeout as exc:
+        logger.warning(
+            "OAuth 上游响应超时：provider=%s action=%s url=%s error=%s",
+            provider_label,
+            action_label,
+            request_url,
+            exc,
+        )
+        raise service_unavailable(f"{provider_label} 登录服务响应超时，请稍后重试。") from exc
+    except httpx.ConnectTimeout as exc:
+        logger.warning(
+            "OAuth 上游连接超时：provider=%s action=%s url=%s error=%s",
+            provider_label,
+            action_label,
+            request_url,
+            exc,
+        )
+        raise service_unavailable(f"连接 {provider_label} 登录服务超时，请稍后重试。") from exc
+    except httpx.ConnectError as exc:
+        logger.warning(
+            "OAuth 上游连接失败：provider=%s action=%s url=%s error=%s",
+            provider_label,
+            action_label,
+            request_url,
+            exc,
+        )
+        raise service_unavailable(f"当前无法连接 {provider_label} 登录服务，请稍后重试。") from exc
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "OAuth 上游返回异常状态：provider=%s action=%s url=%s status=%s",
+            provider_label,
+            action_label,
+            request_url,
+            exc.response.status_code,
+        )
+        raise service_unavailable(f"{provider_label} 登录服务{action_label}失败，请稍后重试。") from exc
+    except httpx.HTTPError as exc:
+        logger.exception(
+            "OAuth 上游请求异常：provider=%s action=%s url=%s",
+            provider_label,
+            action_label,
+            request_url,
+            exc_info=exc,
+        )
+        raise service_unavailable(f"{provider_label} 登录服务暂时不可用，请稍后重试。") from exc
 
 
 def _build_verification_code() -> str:
@@ -321,26 +382,34 @@ def login_with_email(payload: EmailLoginRequest, response: Response, db: Session
 
 async def _exchange_google_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
-    async with httpx.AsyncClient(timeout=20) as client:
-        token_response = await client.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "client_id": settings.auth_google_id,
-                "client_secret": settings.auth_google_secret,
-                "code": code,
-                "code_verifier": code_verifier,
-                "grant_type": "authorization_code",
-                "redirect_uri": redirect_uri,
-            },
+    async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS) as client:
+        token_response = await _run_oauth_request(
+            client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": settings.auth_google_id,
+                    "client_secret": settings.auth_google_secret,
+                    "code": code,
+                    "code_verifier": code_verifier,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": redirect_uri,
+                },
+            ),
+            provider_label="Google",
+            action_label="交换授权信息",
+            request_url="https://oauth2.googleapis.com/token",
         )
-        token_response.raise_for_status()
         token_payload = token_response.json()
         access_token = token_payload["access_token"]
-        user_response = await client.get(
-            "https://openidconnect.googleapis.com/v1/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"},
+        user_response = await _run_oauth_request(
+            client.get(
+                "https://openidconnect.googleapis.com/v1/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            ),
+            provider_label="Google",
+            action_label="获取用户信息",
+            request_url="https://openidconnect.googleapis.com/v1/userinfo",
         )
-        user_response.raise_for_status()
         profile = user_response.json()
     return {
         "provider": "google",
@@ -365,31 +434,43 @@ async def _exchange_google_code(code: str, code_verifier: str, redirect_uri: str
 
 async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
-    async with httpx.AsyncClient(timeout=20, headers={"Accept": "application/json"}) as client:
-        token_response = await client.post(
-            "https://github.com/login/oauth/access_token",
-            data={
-                "client_id": settings.auth_github_id,
-                "client_secret": settings.auth_github_secret,
-                "code": code,
-                "code_verifier": code_verifier,
-                "redirect_uri": redirect_uri,
-            },
+    async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS, headers={"Accept": "application/json"}) as client:
+        token_response = await _run_oauth_request(
+            client.post(
+                "https://github.com/login/oauth/access_token",
+                data={
+                    "client_id": settings.auth_github_id,
+                    "client_secret": settings.auth_github_secret,
+                    "code": code,
+                    "code_verifier": code_verifier,
+                    "redirect_uri": redirect_uri,
+                },
+            ),
+            provider_label="GitHub",
+            action_label="交换授权信息",
+            request_url="https://github.com/login/oauth/access_token",
         )
-        token_response.raise_for_status()
         token_payload = token_response.json()
         access_token = token_payload["access_token"]
-        user_response = await client.get(
-            "https://api.github.com/user",
-            headers={"Authorization": f"Bearer {access_token}"},
+        user_response = await _run_oauth_request(
+            client.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"Bearer {access_token}"},
+            ),
+            provider_label="GitHub",
+            action_label="获取用户信息",
+            request_url="https://api.github.com/user",
         )
-        user_response.raise_for_status()
         profile = user_response.json()
-        email_response = await client.get(
-            "https://api.github.com/user/emails",
-            headers={"Authorization": f"Bearer {access_token}"},
+        email_response = await _run_oauth_request(
+            client.get(
+                "https://api.github.com/user/emails",
+                headers={"Authorization": f"Bearer {access_token}"},
+            ),
+            provider_label="GitHub",
+            action_label="获取邮箱信息",
+            request_url="https://api.github.com/user/emails",
         )
-        email_response.raise_for_status()
         emails = email_response.json()
     primary_email = next((item["email"] for item in emails if item.get("primary")), None) or (emails[0]["email"] if emails else None)
     return {
@@ -490,6 +571,12 @@ async def _finish_oauth(
     redirect_uri: str,
     db: Session,
 ) -> tuple[User, str, str, datetime]:
+    logger.info(
+        "开始处理 OAuth 登录：provider=%s redirect_uri=%s callback_url=%s",
+        provider,
+        redirect_uri,
+        callback_url,
+    )
     if provider == "google":
         auth_payload = await _exchange_google_code(code, code_verifier, redirect_uri)
     elif provider == "github":
@@ -504,6 +591,7 @@ async def _finish_oauth(
     expires = session_expiry()
     db.add(AuthSession(session_token=token, user_id=user.id, expires=expires))
     db.commit()
+    logger.info("OAuth 登录处理完成：provider=%s user_id=%s", provider, user.id)
     return user, callback_url, token, expires
 
 

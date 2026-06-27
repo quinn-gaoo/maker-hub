@@ -6,12 +6,18 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.core.logging import configure_logging, get_logger
 from app.core.startup import ensure_database_ready
+
+configure_logging()
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    logger.info("应用启动检查开始。")
     ensure_database_ready()
+    logger.info("应用启动检查通过。")
     yield
 
 
@@ -34,7 +40,14 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    logger.warning(
+        "HTTP 异常：method=%s path=%s status=%s detail=%s",
+        request.method,
+        request.url.path,
+        exc.status_code,
+        exc.detail,
+    )
     if isinstance(exc.detail, dict):
         payload = exc.detail
     else:
@@ -43,7 +56,13 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    logger.warning(
+        "请求参数校验失败：method=%s path=%s errors=%s",
+        request.method,
+        request.url.path,
+        exc.errors(),
+    )
     field_errors: dict[str, str] = {}
     for item in exc.errors():
         location = ".".join(str(part) for part in item.get("loc", []) if part != "body")
@@ -54,6 +73,24 @@ async def validation_exception_handler(_: Request, exc: RequestValidationError) 
             "code": "VALIDATION_ERROR",
             "message": "请求参数校验失败。",
             "field_errors": field_errors,
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception(
+        "未捕获异常：method=%s path=%s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "code": "INTERNAL_SERVER_ERROR",
+            "message": "服务器内部异常，请稍后重试。",
+            "field_errors": {},
         },
     )
 

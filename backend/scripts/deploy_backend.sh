@@ -4,6 +4,7 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
 BACKEND_DIR=$(CDPATH= cd "$SCRIPT_DIR/.." && pwd -P)
 REPO_DIR=$(CDPATH= cd "$BACKEND_DIR/.." && pwd -P)
+SERVICE_NAME=${SERVICE_NAME:-maker-hub.service}
 
 DEPLOY_BRANCH=${DEPLOY_BRANCH:-main}
 SKIP_GIT_PULL=${SKIP_GIT_PULL:-0}
@@ -40,12 +41,26 @@ uv run alembic upgrade head
 echo "重启服务..."
 sudo systemctl restart maker-hub.service
 
-# 7. 检查状态
-echo "检查服务状态..."
-sudo systemctl status maker-hub.service --no-pager
-
 # 8. 等待服务启动
 sleep 3
+
+if ! sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+  echo "服务启动失败，以下是服务状态：" >&2
+  sudo systemctl status "$SERVICE_NAME" --no-pager || true
+  exit 1
+fi
+
+echo "开始健康检查..."
+if ! curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+  echo "健康检查失败，以下是服务状态：" >&2
+  sudo systemctl status "$SERVICE_NAME" --no-pager || true
+  exit 1
+fi
+
+# # 7. 检查状态
+# echo "检查服务状态..."
+# sudo systemctl status maker-hub.service --no-pager
+
 
 # 9. 健康检查（如果有健康检查端点）
 echo "健康检查..."
