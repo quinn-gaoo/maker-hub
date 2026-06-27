@@ -17,8 +17,8 @@ export default function LoginPage() {
         <div className="absolute bottom-[10%] right-[4%] h-72 w-72 rounded-full bg-accent/35 blur-3xl" />
       </div>
       <div className="mx-auto w-full max-w-[1340px] px-4 py-6 md:px-8 md:py-12">
-        <section className="grid justify-center gap-8 xl:grid-cols-[480px_760px]">
-          <div className="flex flex-col rounded-md border border-border bg-card/90 p-10 shadow-xl/5 backdrop-blur-sm md:p-14">
+        <section className="flex justify-center gap-8 ">
+          <div className=" flex-col rounded-md border border-border bg-card/90 p-10 shadow-xl/5 backdrop-blur-sm md:p-8 hidden xl:flex">
             <Badge variant="outline" className="w-fit rounded-full border-border bg-secondary px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-foreground">
               <span className="mr-3 inline-block size-3 rounded-full bg-primary" />
               Access
@@ -65,7 +65,7 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-md border border-border bg-card/90 p-4 shadow-xl/5 backdrop-blur-sm md:p-14">
+          <div className="w-full md:min-w-[600px] md:w-auto rounded-md border border-border bg-card/90 p-4 shadow-xl/5 backdrop-blur-sm md:p-8">
             <EmailAuthForm />
             <div className="my-10 flex items-center gap-4 text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
