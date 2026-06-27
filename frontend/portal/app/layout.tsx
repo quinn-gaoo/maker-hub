@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="grid gap-8 text-sm sm:grid-cols-2 md:min-w-[360px] md:justify-end">
               <div className="space-y-3">
                 <p className="font-semibold">浏览</p>
-                <Link href="/" className="block text-muted-foreground hover:text-foreground">发现作品</Link>
+                <Link href="/" className="block text-muted-foreground rounded-md! hover:text-foreground">发现作品</Link>
                 <Link href="/submit" className="block text-muted-foreground hover:text-foreground">发布项目</Link>
                 <Link href="/feedback" className="block text-muted-foreground hover:text-foreground">意见反馈</Link>
               </div>

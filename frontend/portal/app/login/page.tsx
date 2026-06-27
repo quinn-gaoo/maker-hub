@@ -2,6 +2,7 @@ import { EmailAuthForm } from "@/components/email-auth-form";
 import { LoginButtons } from "@/components/login-buttons";
 import { Badge } from "@/components/ui/badge";
 import { isOAuthProviderEnabled } from "@/lib/oauth";
+import { CircleUserRound, FolderKanban, MessageCircleMore } from "lucide-react";
 
 const providerMeta = [
   { id: "google", label: "Google", enabled: isOAuthProviderEnabled("google") },
@@ -10,28 +11,71 @@ const providerMeta = [
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
-        <div className="rounded-[2rem] border border-border/70 bg-card/80 p-8 shadow-[0_18px_60px_rgba(0,0,0,0.05)]">
-          <Badge variant="outline" className="rounded-full px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em]">
-            Access
-          </Badge>
-          <div className="mt-6 space-y-4">
-            <h1 className="font-heading text-4xl font-semibold tracking-[-0.08em] md:text-5xl">登录 MakerHub</h1>
-            <p className="max-w-xl text-base leading-7 text-muted-foreground">
-              你现在可以继续使用 Google、GitHub 登录，也可以通过邮箱验证码完成注册和登录。
-            </p>
+    <div className="relative isolate overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-[-8%] top-[4%] h-56 w-56 rounded-full bg-[#ffd6b8]/55 blur-3xl" />
+        <div className="absolute bottom-[10%] right-[4%] h-72 w-72 rounded-full bg-[#d8f0ec]/58 blur-3xl" />
+      </div>
+      <div className="mx-auto w-full max-w-[1340px] px-4 py-6 md:px-8 md:py-12">
+        <section className="grid justify-center gap-8 xl:grid-cols-[480px_760px]">
+          <div className="flex flex-col rounded-md border border-[#e9dfd1] bg-[rgba(255,252,247,0.9)] p-10 shadow-[0_18px_55px_rgba(157,134,109,0.08)] backdrop-blur-sm md:p-14">
+            <Badge variant="outline" className="w-fit rounded-full border-[#a8e1cf] bg-[#eefbf5] px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2f6b59]">
+              <span className="mr-3 inline-block size-3 rounded-full bg-[#1aa67e]" />
+              Access
+            </Badge>
+            <div className="mt-12 space-y-5">
+              <h1 className="font-heading text-[46px] font-semibold leading-none tracking-[-0.07em] text-foreground">登录 MakerHub</h1>
+              <p className=" text-sm leading-6 text-muted-foreground">
+                支持 Google、GitHub、邮箱登录/注册。选择一个你喜欢的方式，加入这个安静的创作者社区。
+              </p>
+            </div>
+            <div className="mt-8 space-y-8">
+              <div className="flex items-start gap-5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-sm border border-[#a8e1cf] bg-[#eaf9f4] text-[#168365]">
+                  <FolderKanban className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-md font-semibold tracking-[-0.03em] text-foreground">管理项目、图片、评论、主页</h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    发布作品后随时编辑内容、调整图片顺序、回复评论，完全掌控你的展示页面。
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-sm border border-[#a8e1cf] bg-[#eaf9f4] text-[#168365]">
+                  <CircleUserRound className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-md font-semibold tracking-[-0.03em] text-foreground">拥有自己的创作者主页</h2>
+                  <p className=" text-sm leading-6 text-muted-foreground">
+                    <span className="font-mono text-[#5e564c]">@你的用户名</span> 将成为别人找到你的方式。把你的作品集中展示在个人主页上。
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-sm border border-[#a8e1cf] bg-[#eaf9f4] text-[#168365]">
+                  <MessageCircleMore className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-md font-semibold tracking-[-0.03em] text-foreground">参与互动、收集真实反馈</h2>
+                  <p className=" text-sm leading-6 text-muted-foreground">
+                    给喜欢的作品点赞、评论，也能收到来自其他创作者的鼓励和建议。
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-8 space-y-3 text-sm text-muted-foreground">
-            <p>统一管理你的 AI 项目、图片、评论和主页展示。</p>
-            <p>邮箱账号适合希望长期运营作品集的创作者，注册时需要完成邮箱验证码验证。</p>
+          <div className="rounded-md border border-[#e9dfd1] bg-[rgba(255,252,247,0.9)] p-4 shadow-[0_18px_55px_rgba(157,134,109,0.08)] backdrop-blur-sm md:p-14">
+            <EmailAuthForm />
+            <div className="my-10 flex items-center gap-4 text-[#a19586]">
+              <div className="h-px flex-1 bg-[#eadfce]" />
+              <span className="text-[14px]">或</span>
+              <div className="h-px flex-1 bg-[#eadfce]" />
+            </div>
+            <LoginButtons providers={providerMeta} />
           </div>
-        </div>
-        <div className="grid gap-6">
-          <EmailAuthForm />
-          <LoginButtons providers={providerMeta} />
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

@@ -36,13 +36,13 @@ export async function Header() {
               <img src="/logo.svg" alt="MakerHub" className="size-9 rounded-[8px] shadow-sm" />
               <span className="font-heading text-base font-black tracking-[-0.03em] md:text-lg">MakerHub</span>
             </Link>
-            <nav className="hidden items-center gap-1 rounded-full bg-background/62 p-1 md:flex">
+            <nav className="hidden items-center gap-1 rounded-sm bg-background/62 p-1 md:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-full px-3.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground",
+                    "rounded-sm px-3.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground",
                   )}
                 >
                   {item.label}
@@ -78,22 +78,22 @@ export async function Header() {
                   <DropdownMenuSeparator className="mx-0 my-0 bg-[#efe4d8]" />
                   <div className="px-2 py-2">
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
-                    <Link href={`/u/${username}`}>
-                      <UserRound className="mr-2.5 size-4.5 stroke-[2.1]" />
-                      我的主页
-                    </Link>
+                      <Link href={`/u/${username}`}>
+                        <UserRound className="mr-2.5 size-4.5 stroke-[2.1]" />
+                        我的主页
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
-                    <Link href="/me/projects">
-                      <FolderKanban className="mr-2.5 size-4.5 stroke-[2.1]" />
-                      我的项目
-                    </Link>
+                      <Link href="/me/projects">
+                        <FolderKanban className="mr-2.5 size-4.5 stroke-[2.1]" />
+                        我的项目
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
-                    <Link href="/me/profile">
-                      <Settings className="mr-2.5 size-4.5 stroke-[2.1]" />
-                      编辑个人信息
-                    </Link>
+                      <Link href="/me/profile">
+                        <Settings className="mr-2.5 size-4.5 stroke-[2.1]" />
+                        编辑个人信息
+                      </Link>
                     </DropdownMenuItem>
                   </div>
                   <DropdownMenuSeparator className="mx-0 my-0 bg-[#efe4d8]" />

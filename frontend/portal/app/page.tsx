@@ -118,7 +118,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <span><strong className="font-mono text-foreground">{stats.creatorCount}</strong> 位独立创作者已在这里发布作品。</span>
               </div>
             </div>
-            <Card className="rounded-[1.75rem] border-border/80 bg-[#fffaf2]/78 shadow-[0_24px_80px_rgba(80,52,28,0.08)] transition-transform duration-300 hover:scale-[1.02] dark:bg-black/78 dark:shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
+            <Card className="rounded-ls border-border/80 bg-[#fffaf2]/78 shadow-[0_24px_80px_rgba(80,52,28,0.08)] transition-transform duration-300 hover:scale-[1.02] dark:bg-black/78 dark:shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
               <CardHeader className="space-y-1">
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-heading text-lg tracking-[-0.04em]">概览</CardTitle>
@@ -146,7 +146,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">最近上新</p>
                   <div className="space-y-3">
                     {featuredProjects.map((project) => (
-                      <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-muted/50">
+                      <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center gap-3 rounded-md p-1 transition-colors hover:bg-muted/50">
                         <div className="size-10 overflow-hidden rounded-lg bg-muted">
                           {project.coverImageUrl ? <img src={project.coverImageUrl} alt={project.title} className="h-full w-full object-cover" /> : null}
                         </div>
@@ -165,7 +165,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 md:px-8">
-        <div className="rounded-[1.75rem] bg-[#050505] bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:34px_34px] px-6 py-10 text-white shadow-[0_28px_80px_rgba(0,0,0,0.18)] dark:bg-[#f8f5ef] dark:bg-[linear-gradient(rgba(0,0,0,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.045)_1px,transparent_1px)] dark:text-black md:px-10 md:py-12">
+        <div className="rounded-2xl bg-[#050505] bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:34px_34px] px-6 py-10 text-white shadow-[0_28px_80px_rgba(0,0,0,0.18)] dark:bg-[#f8f5ef] dark:bg-[linear-gradient(rgba(0,0,0,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.045)_1px,transparent_1px)] dark:text-black md:px-10 md:py-12">
           <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-center">
             <div>
               <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.28em] text-primary">Why MakerHub</p>
@@ -201,9 +201,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   href={buildHref({ sort: option.value, page: 1 })}
                   scroll={false}
                   className={cn(
-                    "inline-flex min-w-14 items-center justify-center rounded-full px-4 py-2 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex min-w-14 items-center justify-center rounded-xl px-4 py-2 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     active
-                      ? "bg-foreground text-background"
+                      ? "bg-muted"
                       : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                   )}
                 >

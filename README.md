@@ -7,18 +7,16 @@ AI 创作者作品宣传站 MVP，采用前后端分离架构。
 ```text
 .
 ├── backend/                # FastAPI + SQLAlchemy + Alembic
-├── frontend/
-│   ├── portal/             # 独立门户网站项目，Next.js 15
-│   ├── admin/              # 独立管理后台项目，Vite + TypeScript + React
-│   └── components/         # 相对独立的共享 UI 组件包
-└── package.json            # 仓库根目录脚本
+├── frontend/portal/        # 独立门户网站项目，Next.js 15
+├── frontend/admin/         # 独立管理后台项目，Vite + TypeScript + React
+└── package.json            # 仅保留少量后端辅助脚本
 ```
 
-`frontend/portal`、`frontend/admin`、`frontend/components` 都可以分别安装依赖和单独运行；`portal` 与 `admin` 通过本地 `file:../components` 依赖复用共享组件。
+`frontend/portal` 和 `frontend/admin` 现在都是独立前端项目，各自维护自己的依赖、锁文件和启动命令，不再按 monorepo 或共享前端 workspace 的方式管理。
 
 ## 快速开始
 
-1. 安装前端依赖
+1. 分别安装前端依赖
 
 ```bash
 cd frontend/portal && pnpm install
@@ -37,6 +35,8 @@ uv sync
 ```bash
 pnpm run sync:backend
 ```
+
+根目录现在只保留少量后端辅助脚本。前端的开发、构建、类型检查都应分别进入 `frontend/portal` 或 `frontend/admin` 执行。
 
 `pnpm run sync:backend` 默认会使用清华 PyPI 镜像和系统证书，适合国内网络环境。如需改回其他源，可以在执行前覆盖 `UV_DEFAULT_INDEX`。
 
@@ -92,18 +92,19 @@ cd backend && uv run python -m uvicorn app.main:app --reload
 
 根目录 `package.json` 的常用脚本如下：
 
-- `cd frontend/portal && pnpm dev`
-- `cd frontend/admin && pnpm dev`
 - `cd backend && uv run python -m uvicorn app.main:app --reload`
-- `cd frontend/portal && pnpm install`
-- `cd frontend/admin && pnpm install`
+- `pnpm run sync:backend`
+- `pnpm run check:backend`
+- `pnpm run test:backend`
+
+前端项目请在各自目录里执行：
+
+- `cd frontend/portal && pnpm dev`
 - `cd frontend/portal && pnpm build`
-- `cd frontend/admin && pnpm build`
 - `cd frontend/portal && pnpm typecheck`
+- `cd frontend/admin && pnpm dev`
+- `cd frontend/admin && pnpm build`
 - `cd frontend/admin && pnpm typecheck`
-- `pnpm sync:backend`
-- `pnpm check:backend`
-- `pnpm test:backend`
 
 ## 数据库
 
@@ -145,7 +146,9 @@ source ~/.bashrc
 uv --version
 ```
 
-仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后按固定流程执行：拉取代码、同步依赖和数据库迁移、重启后端服务。脚本不会设置开机自启，并会清理之前可能存在的自启链接。
+仓库里提供了自动部署脚本 [backend/scripts/deploy_backend.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/deploy_backend.sh)，会根据脚本所在位置自动定位当前项目目录，然后按固定流程执行：拉取代码、同步依赖、执行数据库迁移、重启 `maker-hub.service` 并做健康检查。
+
+如果是新服务器初始化环境，可以先执行 [backend/scripts/init_backend_env.sh](/Users/quinn/work/quinn-gaoo/MakerHub/backend/scripts/init_backend_env.sh)，它会把仓库内的 `maker-hub.service` 和 `maker-hub.logrotate.example` 安装到系统对应位置，并完成 `daemon-reload`、开机自启和 logrotate 配置检查。
 
 GitHub Actions 自动部署时不能输入 sudo 密码，所以部署用户需要配置免密 sudo。以 `github-deploy` 为例：
 
@@ -167,9 +170,9 @@ sh backend/scripts/deploy_backend.sh
 常用运维命令：
 
 ```bash
-sudo systemctl status makerhub-backend --no-pager -l
-sudo systemctl restart makerhub-backend
-sudo journalctl -u makerhub-backend -f
+sudo systemctl status maker-hub.service --no-pager -l
+sudo systemctl restart maker-hub.service
+sudo journalctl -u maker-hub.service -f
 ```
 
 ## GitHub 自动部署
@@ -206,6 +209,5 @@ sh backend/scripts/deploy_backend.sh
 
 ```text
 DEPLOY_BRANCH=main
-BACKEND_SERVICE=makerhub-backend
-DEPLOY_SERVICE_USER=github-deploy
+SERVICE_NAME=maker-hub.service
 ```
