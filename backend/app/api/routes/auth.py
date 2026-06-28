@@ -97,12 +97,14 @@ async def _run_oauth_request(
         )
         raise service_unavailable(f"当前无法连接 {provider_label} 登录服务，请稍后重试。") from exc
     except httpx.HTTPStatusError as exc:
+        response_text = exc.response.text
         logger.warning(
-            "OAuth 上游返回异常状态：provider=%s action=%s url=%s status=%s",
+            "OAuth 上游返回异常状态：provider=%s action=%s url=%s status=%s body=%s",
             provider_label,
             action_label,
             request_url,
             exc.response.status_code,
+            response_text[:1000],
         )
         raise service_unavailable(f"{provider_label} 登录服务{action_label}失败，请稍后重试。") from exc
     except httpx.HTTPError as exc:

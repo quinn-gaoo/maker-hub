@@ -37,7 +37,7 @@ export async function POST(request: Request, context: RouteContext) {
   });
 
   const text = await backendResponse.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = text ? safeJsonParse(text) : null;
   const response = NextResponse.json(payload, { status: backendResponse.status });
 
   if (backendResponse.ok && payload?.token) {
@@ -52,4 +52,14 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   return response;
+}
+
+function safeJsonParse(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text,
+    };
+  }
 }
