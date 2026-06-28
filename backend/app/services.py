@@ -40,7 +40,7 @@ from app.schemas.projects import (
 )
 from app.schemas.stats import HomeStatsResponse
 from app.schemas.tags import TagResponse
-from app.schemas.uploads import ProjectImageUploadResponse
+from app.schemas.uploads import ProjectImageUploadResponse, UploadedImageResponse, UserAvatarUploadResponse
 from app.schemas.users import UserProfileResponse, UserProfileUpdate, UserSummary
 
 MAX_PROJECT_IMAGES = 3
@@ -947,24 +947,70 @@ def attach_project_image(
     if len(project.images) >= MAX_PROJECT_IMAGES:
         raise bad_request("最多上传 3 张图片。", {"images": "最多上传 3 张图片"})
 
+    image_id = str(uuid.uuid4())
+    uploaded = upload_project_image_file(
+        object_prefix=f"projects/{project_id}",
+        image_id=image_id,
+        content_type=content_type,
+        body=body,
+    )
+    next_sort_order = len(project.images) + 1
+    image = ProjectImage(project_id=project.id, image_url=uploaded.image_url, sort_order=next_sort_order)
+    project.images.append(image)
+    project.cover_image_url = project.images[0].image_url if project.images else uploaded.image_url
+    db.add(project)
+    db.commit()
+    db.refresh(image)
+    return ProjectImageUploadResponse(image_url=image.image_url, image_id=image.id, sort_order=image.sort_order)
+
+
+def upload_project_image_file(
+    object_prefix: str,
+    image_id: str,
+    content_type: str,
+    body: bytes,
+) -> UploadedImageResponse:
+    if content_type not in IMAGE_CONTENT_TYPES:
+        raise bad_request("只允许上传图片文件。", {"content_type": "图片格式不支持"})
+
     settings = get_settings()
     ext = CONTENT_TYPE_EXTENSIONS[content_type]
-    image_id = str(uuid.uuid4())
-    object_key = f"projects/{project_id}/{image_id}.{ext}"
+    object_key = f"{object_prefix.rstrip('/')}/{image_id}.{ext}"
     image_url = _upload_to_cos(
         object_key=object_key,
         content_type=content_type,
         body=body,
         settings=settings,
     )
-    next_sort_order = len(project.images) + 1
-    image = ProjectImage(project_id=project.id, image_url=image_url, sort_order=next_sort_order)
-    project.images.append(image)
-    project.cover_image_url = project.images[0].image_url if project.images else image_url
-    db.add(project)
+    return UploadedImageResponse(image_url=image_url)
+
+
+def upload_user_avatar(
+    db: Session,
+    user_id: str,
+    file_name: str,
+    content_type: str,
+    body: bytes,
+) -> UserAvatarUploadResponse:
+    if content_type not in IMAGE_CONTENT_TYPES:
+        raise bad_request("只允许上传图片文件。", {"content_type": "图片格式不支持"})
+
+    user = get_user_or_404(db, user_id)
+    settings = get_settings()
+    ext = CONTENT_TYPE_EXTENSIONS[content_type]
+    object_key = f"users/{user.id}/avatar-{uuid.uuid4()}.{ext}"
+    avatar_url = _upload_to_cos(
+        object_key=object_key,
+        content_type=content_type,
+        body=body,
+        settings=settings,
+    )
+
+    user.avatar_url = avatar_url
+    db.add(user)
     db.commit()
-    db.refresh(image)
-    return ProjectImageUploadResponse(image_url=image.image_url, image_id=image.id, sort_order=image.sort_order)
+    db.refresh(user)
+    return UserAvatarUploadResponse(avatarUrl=user.avatar_url)
 
 
 def _upload_to_cos(object_key: str, content_type: str, body: bytes, settings) -> str:

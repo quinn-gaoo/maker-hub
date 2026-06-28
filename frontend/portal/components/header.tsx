@@ -57,7 +57,7 @@ export async function Header() {
                 <DropdownMenuTrigger
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "border-border/70 bg-background/80 px-3",
+                    "border-border/70 bg-background/80 px-3 ",
                   )}
                 >
                   <span className="flex size-5 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
@@ -67,22 +67,22 @@ export async function Header() {
                       <UserRound className="size-3.5" />
                     )}
                   </span>
+
                   <span className="max-w-28 truncate font-mono">@{displayName}</span>
                   <ChevronDown className="size-4 text-muted-foreground" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-[#e8dccd] bg-[#fffdf9] p-0 shadow-[0_18px_45px_rgba(76,47,24,0.12)]">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-[#e8dccd] bg-background p-0 shadow-[0_18px_45px_rgba(76,47,24,0.12)]">
                   <DropdownMenuLabel className="space-y-1 px-4 py-4">
-                    <p className="truncate text-lg font-semibold tracking-[-0.04em] text-foreground">{profileName}</p>
-                    <p className="truncate font-mono text-sm text-muted-foreground">@{displayName}</p>
+                    <p className="truncate text-lg font-semibold text-foreground">{profileName}</p>
+                    <Link href={`/u/${username}`} className="font-mono text-sm text-muted-foreground hover:text-foreground">
+
+                      {/* <p className="truncate font-mono text-sm text-muted-foreground"> */}
+                      @{displayName}
+                      {/* </p> */}
+                    </Link>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="mx-0 my-0 bg-[#efe4d8]" />
+                  <DropdownMenuSeparator className="mx-0 my-0 bg-background/40" />
                   <div className="px-2 py-2">
-                    <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
-                      <Link href={`/u/${username}`}>
-                        <UserRound className="mr-2.5 size-4.5 stroke-[2.1]" />
-                        我的主页
-                      </Link>
-                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
                       <Link href="/me/projects">
                         <FolderKanban className="mr-2.5 size-4.5 stroke-[2.1]" />

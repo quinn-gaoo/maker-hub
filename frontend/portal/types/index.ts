@@ -107,6 +107,7 @@ export type AuthSessionUser = {
 export type AuthSessionResponse = {
   authenticated: boolean;
   user: AuthSessionUser | null;
+  token?: string | null;
 };
 
 export type UserProfileUpdatePayload = {

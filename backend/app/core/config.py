@@ -7,8 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 DEFAULT_ENV_FILE_PATH = Path(__file__).resolve().parents[2] / ".env"
 REQUIRED_NON_EMPTY_SETTINGS = (
     "database_url",
-    "internal_api_signing_secret",
-    "auth_session_secret",
+    "email_verification_secret",
     "cos_secret_id",
     "cos_secret_key",
     "cos_bucket",
@@ -21,17 +20,13 @@ class Settings(BaseSettings):
     app_name: str = "MakerHub API"
     app_env: str = "development"
     database_url: str
-    internal_api_signing_secret: str
-    auth_session_secret: str
-    auth_base_url: str = "http://localhost:8000"
-    auth_frontend_url: str = "http://localhost:3000"
-    public_api_base_url: str = "http://127.0.0.1:8000"
+    email_verification_secret: str
+    auth_proxy_url: str | None = None
+    auth_proxy_key: str | None = None
     auth_google_id: str | None = None
     auth_google_secret: str | None = None
-    auth_google_redirect_uri: str | None = None
     auth_github_id: str | None = None
     auth_github_secret: str | None = None
-    auth_github_redirect_uri: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None

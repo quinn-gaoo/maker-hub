@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { clientApiPath } from "@/lib/client-api";
 import type { AuthSessionResponse } from "@/types";
 
 type ApiError = {
@@ -53,7 +54,7 @@ export function RegisterForm() {
     setSendingCode(true);
 
     try {
-      const response = await fetch("/api/auth/email-verification-code", {
+      const response = await fetch(clientApiPath("/auth/email-verification-code"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

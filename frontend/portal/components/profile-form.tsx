@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Save, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { clientAuthFetch } from "@/lib/client-auth-fetch";
 import { cn } from "@/lib/utils";
 import type { UserProfile, UserProfileUpdatePayload } from "@/types";
 
@@ -25,11 +26,42 @@ type ProfileUpdateResponse = {
   message?: string;
 };
 
+type AvatarUploadResponse = {
+  avatarUrl?: string;
+  avatar_url?: string;
+  message?: string;
+  detail?: { message?: string };
+  fieldErrors?: Record<string, string>;
+  field_errors?: Record<string, string>;
+};
+
 const MAX_BIO_LENGTH = 200;
+const IMAGE_CONTENT_TYPES_BY_EXTENSION: Record<string, string> = {
+  avif: "image/avif",
+  gif: "image/gif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+function getImageContentType(file: File) {
+  if (file.type) {
+    return file.type;
+  }
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return extension ? IMAGE_CONTENT_TYPES_BY_EXTENSION[extension] : undefined;
+}
+
+function getAvatarUploadError(result: AvatarUploadResponse | null, fallback: string) {
+  const fieldErrors = result?.fieldErrors ?? result?.field_errors;
+  return result?.message ?? result?.detail?.message ?? fieldErrors?.image ?? fieldErrors?.content_type ?? fieldErrors?.file ?? fallback;
+}
 
 export function ProfileForm({ profile }: ProfileFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [name, setName] = useState(profile.name ?? "");
   const [username, setUsername] = useState(profile.username ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? "");
@@ -37,8 +69,45 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   const [error, setError] = useState("");
   const cancelHref = profile.username ? `/u/${profile.username}` : "/";
 
+  async function handleAvatarChange(file: File | null) {
+    if (!file || uploadingAvatar) {
+      return;
+    }
+
+    setError("");
+    setUploadingAvatar(true);
+
+    try {
+      const contentType = getImageContentType(file);
+      if (!contentType) {
+        setError("无法识别图片格式，请选择 JPG、PNG、WebP、GIF 或 AVIF。");
+        return;
+      }
+
+      const response = await clientAuthFetch("/uploads/users/me/avatar", {
+        method: "POST",
+        headers: {
+          "Content-Type": contentType,
+          "X-File-Name": encodeURIComponent(file.name),
+        },
+        body: file,
+      });
+
+      const result = (await response.json().catch(() => null)) as AvatarUploadResponse | null;
+      const nextAvatarUrl = result?.avatarUrl ?? result?.avatar_url;
+      if (!response.ok || !nextAvatarUrl) {
+        setError(getAvatarUploadError(result, "头像上传失败。"));
+        return;
+      }
+
+      setAvatarUrl(nextAvatarUrl);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   async function handleSubmit() {
-    if (pending) {
+    if (pending || uploadingAvatar) {
       return;
     }
 
@@ -73,7 +142,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
     setPending(true);
     try {
-      const response = await fetch("/api/bff/me/profile", {
+      const response = await clientAuthFetch("/users/me", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +191,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       </label>
 
       <label className="grid gap-3 ">
-        <span>头像链接</span>
+        <span>头像</span>
         <div className="grid gap-4 md:grid-cols-[96px_1fr] md:items-center">
           <div className="size-20 overflow-hidden rounded-full bg-accent">
             {avatarUrl ? (
@@ -133,12 +202,24 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               </div>
             )}
           </div>
-          <Input
-            value={avatarUrl}
-            onChange={(event) => setAvatarUrl(event.target.value)}
-            placeholder="https://example.com/avatar.png"
-            className="h-11 rounded-lg bg-background/70 px-6 text-xl"
-          />
+          <div className="space-y-3">
+            <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-3 rounded-lg border border-border bg-background/70 px-6 text-base font-medium transition-colors hover:bg-accent">
+              <Upload className="size-4" />
+              {uploadingAvatar ? "上传中..." : avatarUrl ? "上传新头像" : "上传头像"}
+              <Input
+                className="hidden"
+                type="file"
+                accept="image/*"
+                disabled={uploadingAvatar}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  void handleAvatarChange(file);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+            <p className="text-base font-medium text-muted-foreground">支持 JPG、PNG、WebP、GIF、AVIF。上传后会直接替换当前头像。</p>
+          </div>
         </div>
       </label>
 
@@ -158,7 +239,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         <Link href={cancelHref} className={cn(buttonVariants({ variant: "outline" }), "h-11 rounded-md bg-background/70 text-xl font-medium")}>
           取消
         </Link>
-        <Button disabled={pending} onClick={handleSubmit} className="h-11 rounded-md text-xl font-bold">
+        <Button disabled={pending || uploadingAvatar} onClick={handleSubmit} className="h-11 rounded-md text-xl font-bold">
           <Save />
           保存个人信息
         </Button>

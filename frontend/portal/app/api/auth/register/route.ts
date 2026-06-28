@@ -1,22 +1,36 @@
 import { NextResponse } from "next/server";
 
-import { getApiBaseUrl } from "@/lib/server-config";
+import { apiPath } from "@/lib/client-api";
+import { PORTAL_SESSION_COOKIE } from "@/lib/session-cookie";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const payload = await request.text();
-  const response = await fetch(`${getApiBaseUrl()}/auth/register`, {
+  const rawBody = await request.text();
+  const backendResponse = await fetch(apiPath("/auth/register"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: payload,
+    body: rawBody,
+    cache: "no-store",
   });
 
-  const nextResponse = NextResponse.json(await response.json().catch(() => null), { status: response.status });
-  const setCookie = response.headers.get("set-cookie");
-  if (setCookie) {
-    nextResponse.headers.set("set-cookie", setCookie);
+  const text = await backendResponse.text();
+  const payload = text ? JSON.parse(text) : null;
+  const response = NextResponse.json(payload, { status: backendResponse.status });
+
+  if (backendResponse.ok && payload?.token) {
+    response.cookies.set({
+      name: PORTAL_SESSION_COOKIE,
+      value: payload.token,
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
   }
-  return nextResponse;
+
+  return response;
 }

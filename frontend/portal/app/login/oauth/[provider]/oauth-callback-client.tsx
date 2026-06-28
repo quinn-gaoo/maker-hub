@@ -50,6 +50,11 @@ export function OAuthCallbackClient({ provider }: OAuthCallbackClientProps) {
   const [message, setMessage] = useState("正在同步授权信息...");
 
   useEffect(() => {
+    if (!searchParams) {
+      setMessage("缺少必要的授权参数，无法完成登录。");
+      return;
+    }
+
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const error = searchParams.get("error");

@@ -27,7 +27,9 @@ export const SignOutButton = forwardRef<HTMLButtonElement, SignOutButtonProps>(f
 
     setPending(true);
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
       const result = (await response.json().catch(() => null)) as { ok?: boolean } | null;
       if (!response.ok || !result?.ok) {
         return;

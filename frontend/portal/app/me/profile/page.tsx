@@ -23,8 +23,8 @@ export default async function EditProfilePage() {
             Profile
           </Badge>
           <div className="mt-7 space-y-4">
-            <h1 className="font-heading text-4xl font-black tracking-[-0.08em] md:text-6xl">个人信息</h1>
-            <p className="max-w-3xl text-xl leading-8 text-muted-foreground">
+            <h1 className="font-heading text-3xl font-black tracking-[-0.08em] ">个人信息</h1>
+            <p className="max-w-3xl text-sm leading-8 text-muted-foreground">
               更新昵称、主页地址、头像和简介。这些信息会显示在你的公开主页上。
             </p>
           </div>

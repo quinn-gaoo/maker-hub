@@ -5,15 +5,15 @@ import hmac
 import secrets
 from datetime import UTC, datetime, timedelta
 import httpx
-from fastapi import APIRouter, Depends, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, Header, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.auth import (
-    build_callback_url,
+    SESSION_COOKIE_NAME,
     clear_session_cookie,
     create_session_token,
     hash_password,
@@ -55,7 +55,7 @@ def _handle_verification_storage_error(db: Session, exc: ProgrammingError) -> No
 
 
 def _verification_secret() -> str:
-    return get_settings().auth_session_secret
+    return get_settings().email_verification_secret
 
 
 async def _run_oauth_request(
@@ -230,7 +230,7 @@ def _build_auth_session_user(user: User) -> AuthSessionUser:
         id=user.id,
         email=user.email,
         name=user.name,
-        image=user.image,
+        image=user.avatar_url or user.image,
         username=user.username,
         role=user.role,
         is_admin=user.role == "admin",
@@ -359,6 +359,7 @@ def register_with_email(payload: EmailRegisterRequest, response: Response, db: S
     return AuthSessionResponse(
         authenticated=True,
         user=_build_auth_session_user(user),
+        token=token,
     )
 
 
@@ -377,68 +378,44 @@ def login_with_email(payload: EmailLoginRequest, response: Response, db: Session
     return AuthSessionResponse(
         authenticated=True,
         user=_build_auth_session_user(user),
+        token=token,
     )
 
 
 async def _exchange_google_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
+    proxy_url = _require_auth_proxy_url(settings)
+    proxy_key = _require_auth_proxy_key(settings)
     async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS) as client:
         token_response = await _run_oauth_request(
             client.post(
-                "https://oauth2.googleapis.com/token",
-                data={
+                f"{proxy_url}/google",
+                headers={"X-Auth-Proxy-Key": proxy_key},
+                json={
                     "client_id": settings.auth_google_id,
                     "client_secret": settings.auth_google_secret,
                     "code": code,
                     "code_verifier": code_verifier,
-                    "grant_type": "authorization_code",
                     "redirect_uri": redirect_uri,
                 },
             ),
             provider_label="Google",
             action_label="交换授权信息",
-            request_url="https://oauth2.googleapis.com/token",
+            request_url=f"{proxy_url}/google",
         )
-        token_payload = token_response.json()
-        access_token = token_payload["access_token"]
-        user_response = await _run_oauth_request(
-            client.get(
-                "https://openidconnect.googleapis.com/v1/userinfo",
-                headers={"Authorization": f"Bearer {access_token}"},
-            ),
-            provider_label="Google",
-            action_label="获取用户信息",
-            request_url="https://openidconnect.googleapis.com/v1/userinfo",
-        )
-        profile = user_response.json()
-    return {
-        "provider": "google",
-        "provider_account_id": str(profile["sub"]),
-        "type": "oauth",
-        "access_token": access_token,
-        "refresh_token": token_payload.get("refresh_token"),
-        "expires_at": token_payload.get("expires_in"),
-        "token_type": token_payload.get("token_type"),
-        "scope": token_payload.get("scope"),
-        "id_token": token_payload.get("id_token"),
-        "session_state": None,
-        "user": {
-            "id": f"google:{profile['sub']}",
-            "email": profile.get("email"),
-            "name": profile.get("name"),
-            "image": profile.get("picture"),
-            "email_verified": profile.get("email_verified"),
-        },
-    }
+        return token_response.json()
 
 
 async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
+    proxy_url = _require_auth_proxy_url(settings)
+    proxy_key = _require_auth_proxy_key(settings)
     async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS, headers={"Accept": "application/json"}) as client:
         token_response = await _run_oauth_request(
             client.post(
-                "https://github.com/login/oauth/access_token",
-                data={
+                f"{proxy_url}/github",
+                headers={"X-Auth-Proxy-Key": proxy_key},
+                json={
                     "client_id": settings.auth_github_id,
                     "client_secret": settings.auth_github_secret,
                     "code": code,
@@ -448,50 +425,23 @@ async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str
             ),
             provider_label="GitHub",
             action_label="交换授权信息",
-            request_url="https://github.com/login/oauth/access_token",
+            request_url=f"{proxy_url}/github",
         )
-        token_payload = token_response.json()
-        access_token = token_payload["access_token"]
-        user_response = await _run_oauth_request(
-            client.get(
-                "https://api.github.com/user",
-                headers={"Authorization": f"Bearer {access_token}"},
-            ),
-            provider_label="GitHub",
-            action_label="获取用户信息",
-            request_url="https://api.github.com/user",
-        )
-        profile = user_response.json()
-        email_response = await _run_oauth_request(
-            client.get(
-                "https://api.github.com/user/emails",
-                headers={"Authorization": f"Bearer {access_token}"},
-            ),
-            provider_label="GitHub",
-            action_label="获取邮箱信息",
-            request_url="https://api.github.com/user/emails",
-        )
-        emails = email_response.json()
-    primary_email = next((item["email"] for item in emails if item.get("primary")), None) or (emails[0]["email"] if emails else None)
-    return {
-        "provider": "github",
-        "provider_account_id": str(profile["id"]),
-        "type": "oauth",
-        "access_token": access_token,
-        "refresh_token": token_payload.get("refresh_token"),
-        "expires_at": None,
-        "token_type": token_payload.get("token_type"),
-        "scope": token_payload.get("scope"),
-        "id_token": None,
-        "session_state": None,
-        "user": {
-            "id": f"github:{profile['id']}",
-            "email": primary_email,
-            "name": profile.get("name") or profile.get("login"),
-            "image": profile.get("avatar_url"),
-            "email_verified": None,
-        },
-    }
+        return token_response.json()
+
+
+def _require_auth_proxy_url(settings) -> str:
+    value = settings.auth_proxy_url.strip() if settings.auth_proxy_url else ""
+    if not value:
+        raise service_unavailable("OAuth 代理地址未配置。")
+    return value.rstrip("/")
+
+
+def _require_auth_proxy_key(settings) -> str:
+    value = settings.auth_proxy_key.strip() if settings.auth_proxy_key else ""
+    if not value:
+        raise service_unavailable("OAuth 代理密钥未配置。")
+    return value
 
 
 async def _upsert_auth_user(db: Session, auth_payload: dict) -> User:
@@ -637,15 +587,22 @@ async def complete_oauth(
         authenticated=True,
         callback_url=destination,
         user=_build_auth_session_user(user),
+        token=token,
     )
 
 
 @router.post("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):
-    session_token = request.cookies.get("makerhub_session")
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not session_token:
+        authorization = request.headers.get("authorization")
+        if authorization:
+            scheme, _, token = authorization.partition(" ")
+            if scheme.lower() == "bearer" and token.strip():
+                session_token = token.strip()
     if session_token:
         db.query(AuthSession).filter(AuthSession.session_token == session_token).delete()
         db.commit()
-    response = RedirectResponse(url=get_settings().auth_frontend_url.rstrip("/") + "/", status_code=302)
+    response = JSONResponse({"ok": True})
     clear_session_cookie(response)
     return response

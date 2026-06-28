@@ -170,7 +170,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 )}
               </Link>
               <div className="min-w-0">
-                <p className="font-heading truncate text-lg font-black tracking-[-0.04em]">{authorName}</p>
+                <p className="font-heading truncate text-lg font-black">{authorName}</p>
                 <p className="truncate font-mono text-sm text-muted-foreground">@{project.author.username ?? "creator"}</p>
               </div>
             </div>

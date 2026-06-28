@@ -121,7 +121,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <Card className="rounded-ls border-border/80 bg-[#fffaf2]/78 shadow-[0_24px_80px_rgba(80,52,28,0.08)] transition-transform duration-300 hover:scale-[1.02] dark:bg-black/78 dark:shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
               <CardHeader className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="font-heading text-lg tracking-[-0.04em]">概览</CardTitle>
+                  <CardTitle className="font-heading text-lg ">概览</CardTitle>
                   <span className="text-xs text-muted-foreground">Live</span>
                 </div>
               </CardHeader>

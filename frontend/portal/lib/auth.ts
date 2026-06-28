@@ -1,22 +1,13 @@
-import { cookies } from "next/headers";
-
+import { apiPath } from "@/lib/client-api";
+import { getPortalSessionToken } from "@/lib/server-session";
 import type { AuthSessionResponse } from "@/types";
 
-function getApiBaseUrl() {
-  const value = process.env.API_BASE_URL;
-  if (!value) {
-    throw new Error("Missing API_BASE_URL.");
-  }
-  return value.replace(/\/$/, "");
-}
-
 export async function auth() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-  const response = await fetch(`${getApiBaseUrl()}/auth/session`, {
+  const token = await getPortalSessionToken();
+  const response = await fetch(apiPath("/auth/session"), {
     headers: {
       Accept: "application/json",
-      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     cache: "no-store",
   });
@@ -30,5 +21,5 @@ export async function auth() {
 }
 
 export function getLogoutUrl() {
-  return `${getApiBaseUrl()}/auth/logout`;
+  return "/api/auth/logout";
 }

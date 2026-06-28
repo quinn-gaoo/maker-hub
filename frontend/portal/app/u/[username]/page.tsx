@@ -27,7 +27,6 @@ export default async function UserPage({ params }: UserPageProps) {
     apiGet<PaginatedResponse<ProjectCardType>>(`/users/${username}/projects`),
     auth(),
   ]);
-  const isOwnProfile = session?.user?.id === profile.id;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 md:px-8 py-8">
@@ -37,12 +36,6 @@ export default async function UserPage({ params }: UserPageProps) {
             <h1 className="font-mono text-3xl font-semibold tracking-[-0.06em] md:text-4xl">@{profile.username}</h1>
             <span className="text-sm text-muted-foreground">{projects.total} 个公开项目</span>
           </div>
-          {isOwnProfile ? (
-            <Link href="/me/profile" className={buttonVariants({ variant: "outline" })}>
-              <Settings />
-              编辑个人信息
-            </Link>
-          ) : null}
         </div>
         <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
           {profile.bio || "这位创作者还没有留下个人简介。"}

@@ -1,38 +1,55 @@
 import { NextResponse } from "next/server";
 
-import { getApiBaseUrl } from "@/lib/server-config";
+import { apiPath } from "@/lib/client-api";
+import { PORTAL_SESSION_COOKIE } from "@/lib/session-cookie";
+
+const SUPPORTED_PROVIDERS = new Set(["google", "github"]);
 
 type RouteContext = {
-  params: Promise<{ provider: string }>;
+  params: Promise<{
+    provider: string;
+  }>;
 };
 
-export async function POST(request: Request, { params }: RouteContext) {
-  const { provider } = await params;
-  const payload = await request.text();
-  const response = await fetch(`${getApiBaseUrl()}/auth/${provider}/complete`, {
+export const runtime = "nodejs";
+
+export async function POST(request: Request, context: RouteContext) {
+  const { provider } = await context.params;
+
+  if (!SUPPORTED_PROVIDERS.has(provider)) {
+    return NextResponse.json(
+      {
+        message: "不支持的登录提供商。",
+      },
+      { status: 400 },
+    );
+  }
+
+  const rawBody = await request.text();
+  const backendResponse = await fetch(apiPath(`/auth/${provider}/complete`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: payload,
+    body: rawBody,
+    cache: "no-store",
   });
 
-  const responseText = await response.text();
-  let responsePayload: unknown = null;
+  const text = await backendResponse.text();
+  const payload = text ? JSON.parse(text) : null;
+  const response = NextResponse.json(payload, { status: backendResponse.status });
 
-  if (responseText) {
-    try {
-      responsePayload = JSON.parse(responseText);
-    } catch {
-      responsePayload = { message: responseText };
-    }
+  if (backendResponse.ok && payload?.token) {
+    response.cookies.set({
+      name: PORTAL_SESSION_COOKIE,
+      value: payload.token,
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
   }
 
-  const nextResponse = NextResponse.json(responsePayload, { status: response.status });
-  const setCookie = response.headers.get("set-cookie");
-  if (setCookie) {
-    nextResponse.headers.set("set-cookie", setCookie);
-  }
-  return nextResponse;
+  return response;
 }

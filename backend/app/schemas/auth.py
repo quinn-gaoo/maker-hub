@@ -16,6 +16,7 @@ class AuthSessionUser(APIModel):
 class AuthSessionResponse(APIModel):
     authenticated: bool
     user: AuthSessionUser | None = None
+    token: str | None = None
 
 
 class OAuthStartResponse(APIModel):
@@ -46,6 +47,7 @@ class OAuthCompleteResponse(APIModel):
     authenticated: bool
     user: AuthSessionUser | None = None
     callback_url: str
+    token: str | None = None
 
 
 class EmailRegisterRequest(APIModel):

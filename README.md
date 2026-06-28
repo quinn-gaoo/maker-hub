@@ -55,9 +55,10 @@ COS_REGION=
 COS_PUBLIC_BASE_URL=
 ```
 
-如需启用邮箱注册验证码，还需要补充 SMTP 与验证码配置：
+邮箱注册验证码需要配置验证码签名密钥，以及用于发送邮件的 SMTP 配置：
 
 ```bash
+EMAIL_VERIFICATION_SECRET=
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USERNAME=
@@ -70,6 +71,19 @@ EMAIL_VERIFICATION_CODE_LENGTH=6
 EMAIL_VERIFICATION_CODE_TTL_MINUTES=10
 EMAIL_VERIFICATION_CODE_COOLDOWN_SECONDS=60
 ```
+
+第三方 OAuth 登录需要在后端配置 OAuth 应用信息和代理地址。后端会把 `code`、`client_id`、`client_secret` 发送给 portal 代理，由 portal 代理访问 Google/GitHub 换取用户信息：
+
+```bash
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+AUTH_GITHUB_ID=
+AUTH_GITHUB_SECRET=
+AUTH_PROXY_URL=http://localhost:3000/api/proxy/oauth
+AUTH_PROXY_KEY=
+```
+
+portal 前端也需要配置同一个 `AUTH_PROXY_KEY`，并配置公开的 OAuth Client ID 用于发起第三方授权跳转。
 
 4. 创建一个管理后台账号
 
@@ -125,7 +139,7 @@ cd /www/wwwroot/maker-hub/backend
 cp .env.example .env
 ```
 
-编辑 `backend/.env`，至少填好 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。`DATABASE_URL` 就写你真实数据库地址：
+编辑 `backend/.env`，至少填好 `DATABASE_URL`、`EMAIL_VERIFICATION_SECRET` 和 COS 配置。`DATABASE_URL` 就写你真实数据库地址：
 
 ```text
 DATABASE_URL=postgresql+psycopg://用户名:密码@数据库地址:5432/数据库名
@@ -196,7 +210,7 @@ DEPLOY_WORKDIR=/www/wwwroot/maker-hub
 
 `DEPLOY_SSH_KEY` 里要放私钥原文，不要放 `.pub` 公钥，也不要包一层引号。常见格式是以 `-----BEGIN OPENSSH PRIVATE KEY-----` 或 `-----BEGIN RSA PRIVATE KEY-----` 开头的完整内容。
 
-部署前先确认服务器上的 `backend/.env` 已经从 [backend/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/backend/.env.example) 复制出来并填好必填项，尤其是 `DATABASE_URL`、`INTERNAL_API_SIGNING_SECRET`、`AUTH_SESSION_SECRET` 和 COS 配置。
+部署前先确认服务器上的 `backend/.env` 已经从 [backend/.env.example](/Users/quinn/work/quinn-gaoo/MakerHub/backend/.env.example) 复制出来并填好必填项，尤其是 `DATABASE_URL`、`EMAIL_VERIFICATION_SECRET` 和 COS 配置。
 
 也可以在服务器上单独执行同一个脚本：
 

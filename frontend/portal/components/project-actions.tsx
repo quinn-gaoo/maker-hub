@@ -7,6 +7,7 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
+import { clientAuthFetch } from "@/lib/client-auth-fetch";
 import { cn } from "@/lib/utils";
 
 type ProjectActionsProps = {
@@ -26,12 +27,12 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
     setError("");
     setPending(true);
     try {
-      const response = await fetch(`/api/bff/projects/${projectId}`, {
+      const response = await clientAuthFetch(`/projects/${projectId}`, {
         method: "DELETE",
       });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
 
-      if (!response.ok || !payload?.ok) {
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setError(payload?.message ?? "删除失败。");
         return;
       }

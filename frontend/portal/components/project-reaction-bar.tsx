@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { clientAuthFetch } from "@/lib/client-auth-fetch";
 import { cn } from "@/lib/utils";
 import type { ProjectReactionResponse } from "@/types";
 
@@ -38,9 +39,8 @@ export function ProjectReactionBar({
     setError("");
     setPending(true);
     try {
-      const response = await fetch(`/api/bff/projects/${projectId}/reactions`, {
+      const response = await clientAuthFetch(`/projects/${projectId}/reactions`, {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

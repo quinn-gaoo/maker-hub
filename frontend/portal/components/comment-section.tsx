@@ -8,6 +8,7 @@ import { LogIn, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { clientAuthFetch } from "@/lib/client-auth-fetch";
 import { MAX_COMMENT_LENGTH } from "@/lib/constants";
 import type { CommentItem } from "@/types";
 
@@ -53,12 +54,12 @@ export function CommentSection({
 
     setPending(true);
     try {
-      const response = await fetch("/api/bff/comments", {
+      const response = await clientAuthFetch(`/projects/${projectId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ projectId, content: trimmed }),
+        body: JSON.stringify({ content: trimmed }),
       });
       const payload = (await response.json().catch(() => null)) as (CommentItem & { message?: string }) | null;
 
@@ -82,12 +83,12 @@ export function CommentSection({
     setError("");
     setPending(true);
     try {
-      const response = await fetch(`/api/bff/comments/${commentId}`, {
+      const response = await clientAuthFetch(`/comments/${commentId}`, {
         method: "DELETE",
       });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
 
-      if (!response.ok || !payload?.ok) {
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setError(payload?.message ?? "删除评论失败。");
         return;
       }

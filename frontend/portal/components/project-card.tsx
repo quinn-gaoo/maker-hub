@@ -58,7 +58,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <div className="space-y-2 pb-3">
             <Link
               href={`/projects/${project.id}`}
-              className="group-hover:text-primary font-heading line-clamp-2 text-lg font-black tracking-[-0.04em] transition-colors hover:text-primary"
+              className="group-hover:text-primary font-heading line-clamp-2 text-lg font-black transition-colors hover:text-primary"
             >
               {project.title}
             </Link>

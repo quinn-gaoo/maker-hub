@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Bell, Plus, Save, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -18,6 +18,7 @@ import {
   MAX_TITLE_LENGTH,
   MIN_PROJECT_IMAGES,
 } from "@/lib/constants";
+import { clientAuthFetch } from "@/lib/client-auth-fetch";
 import { cn } from "@/lib/utils";
 
 type ProjectFormProps = {
@@ -94,26 +95,28 @@ function ImageTile({
   disableMoveRight,
 }: ImageTileProps) {
   return (
-    <div className="flex items-center gap-5 rounded-xl border border-border/80 bg-background/55 p-5">
-      <div className="size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+    <div className="flex flex-col items-center gap-5 rounded-lg border border-border/80 bg-background/55 p-5">
+      <div className="w-full aspect-4/3 shrink-0 overflow-hidden rounded-lg bg-muted">
         <img src={imageUrl} alt={label} className="h-full w-full object-cover" />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-sm  text-foreground">{detail ?? imageUrl}</p>
-        <Badge variant="outline" className="mt-2 rounded-full">
-          {label}
-        </Badge>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Button variant="outline" size="icon" onClick={onMoveLeft} disabled={disableMoveLeft} className="rounded-md bg-background/70">
-          <ArrowUp className="size-4" />
-        </Button>
-        <Button variant="outline" size="icon" onClick={onMoveRight} disabled={disableMoveRight} className="rounded-md bg-background/70">
-          <ArrowDown className="size-4" />
-        </Button>
-        <Button variant="outline" size="icon" onClick={onRemove} className="rounded-md bg-background/70">
-          <X className="size-4" />
-        </Button>
+      <div className="flex items-center justify-end gap-2 w-full">
+        <div className="min-w-0 flex-1">
+          {detail ? <p className="truncate font-mono text-sm text-foreground">{detail}</p> : null}
+          <Badge variant="outline" className="mt-2 rounded-full">
+            {label}
+          </Badge>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="outline" size="icon" onClick={onMoveLeft} disabled={disableMoveLeft} className="rounded-md bg-background/70">
+            <ArrowUp className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onMoveRight} disabled={disableMoveRight} className="rounded-md bg-background/70">
+            <ArrowDown className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onRemove} className="rounded-md bg-background/70">
+            <X className="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -127,7 +130,6 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
   const [projectUrl, setProjectUrl] = useState(initialData?.projectUrl ?? "");
   const [githubUrl, setGithubUrl] = useState(initialData?.githubUrl ?? "");
   const [tagInput, setTagInput] = useState(initialData?.tags.join(", ") ?? "");
-  const [imageUrlInput, setImageUrlInput] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [existingImages, setExistingImages] = useState(initialData?.images ?? []);
   const [error, setError] = useState("");
@@ -174,30 +176,6 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
     ]);
   }
 
-  function handleAddImageUrl() {
-    const trimmed = imageUrlInput.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    try {
-      new URL(trimmed);
-    } catch {
-      setError("请输入有效的图片链接。");
-      return;
-    }
-
-    const total = existingImages.length + pendingImages.length;
-    if (total >= MAX_PROJECT_IMAGES) {
-      setError(`最多上传 ${MAX_PROJECT_IMAGES} 张图片。`);
-      return;
-    }
-
-    setError("");
-    setExistingImages((current) => [...current, trimmed]);
-    setImageUrlInput("");
-  }
-
   function removeExistingImage(imageUrl: string) {
     setExistingImages((current) => current.filter((item) => item !== imageUrl));
   }
@@ -236,19 +214,18 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
     });
   }
 
-  async function uploadPendingProjectImages(targetProjectId: string) {
+  async function uploadPendingProjectImages() {
     const uploadedImageUrls: string[] = [];
 
     for (const image of pendingImages) {
       const readyFile = await uploadFile(image.file);
-      const uploadResponse = await fetch(`/api/bff/uploads/projects/${targetProjectId}/images`, {
+      const uploadResponse = await clientAuthFetch("/uploads/projects/images", {
         method: "POST",
         headers: {
           "Content-Type": readyFile.type,
           "X-File-Name": encodeURIComponent(readyFile.name),
         },
         body: readyFile,
-        credentials: "include",
       });
 
       const uploadPayload = (await uploadResponse.json().catch(() => null)) as ProjectImageUploadResponse | null;
@@ -301,19 +278,18 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
           throw new Error("缺少项目 ID，无法保存。");
         }
 
-        const uploadedImageUrls = await uploadPendingProjectImages(projectId);
+        const uploadedImageUrls = await uploadPendingProjectImages();
         const payload = JSON.stringify({
           ...basePayload,
           images: [...existingImages, ...uploadedImageUrls],
         });
 
-        const response = await fetch(`/api/bff/projects/${projectId}`, {
+        const response = await clientAuthFetch(`/projects/${projectId}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
           body: payload,
-          credentials: "include",
         });
 
         const result = (await response.json().catch(() => null)) as ProjectMutationResponse | null;
@@ -327,43 +303,23 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
         return;
       }
 
+      const uploadedImageUrls = await uploadPendingProjectImages();
       const createPayload = JSON.stringify({
         ...basePayload,
-        images: existingImages,
+        images: [...existingImages, ...uploadedImageUrls],
       });
 
-      const response = await fetch("/api/bff/projects", {
+      const response = await clientAuthFetch("/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: createPayload,
-        credentials: "include",
       });
 
       const result = (await response.json().catch(() => null)) as ProjectMutationResponse | null;
       if (!response.ok || !result?.slug || !result?.id) {
         throw new Error(result?.message ?? "项目保存失败");
-      }
-
-      const uploadedImageUrls = await uploadPendingProjectImages(result.id);
-      if (uploadedImageUrls.length > 0) {
-        const patchResponse = await fetch(`/api/bff/projects/${result.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...basePayload,
-            images: [...existingImages, ...uploadedImageUrls],
-          }),
-          credentials: "include",
-        });
-
-        const patched = (await patchResponse.json().catch(() => null)) as ProjectMutationResponse | null;
-        if (!patchResponse.ok || !patched?.id) {
-          throw new Error(patched?.message ?? "项目保存失败");
-        }
       }
 
       toast.success("项目发布成功。", { id: loadingToastId });
@@ -450,27 +406,14 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
           <p className="font-mono text-sm text-muted-foreground">当前 {existingImages.length + pendingImages.length} 张（建议 1-3 张）</p>
         </div>
 
-        <div className="flex flex-col gap-3 md:flex-row">
-          <Input
-            value={imageUrlInput}
-            onChange={(event) => setImageUrlInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                handleAddImageUrl();
-              }
-            }}
-            placeholder="粘贴图片链接 & 回车添加"
-            className="h-16 flex-1 rounded-lg bg-background/70 px-6 text-xl"
-          />
-          <Button type="button" variant="secondary" onClick={handleAddImageUrl} >
-            <Plus />
-            添加
-          </Button>
-        </div>
-
         <div className="flex flex-wrap items-center gap-5">
-          <label className="inline-flex h-16 cursor-pointer items-center justify-center gap-3 rounded-lg border border-border bg-background/70 px-8 text-lg font-semibold transition-colors hover:bg-accent">
+          {/* <Button variant="outline">
+            <Upload className="size-5" />
+            上传图片</Button> */}
+          <label
+            className={buttonVariants({ variant: "outline" })}
+          // className="inline-flex h-14 cursor-pointer items-center justify-center gap-3 rounded-sm border border-border bg-background/70 px-8 text-sm font-semibold transition-colors hover:bg-accent"
+          >
             <Upload className="size-5" />
             本地上传
             <Input
@@ -481,7 +424,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
               onChange={(event) => handleFileChange(event.target.files)}
             />
           </label>
-          <span className="text-sm  text-muted-foreground">支持 JPG、PNG、WebP</span>
+          <span className="text-sm  text-muted-foreground">支持 JPG、PNG、WebP。上传后系统会自动保存并使用图片。(建议尺寸比例 4:3)</span>
         </div>
       </div>
 
@@ -534,11 +477,11 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="grid gap-4 border-t border-border/70 pt-8 md:grid-cols-[120px_1fr]">
         {mode === "edit" ? (
-          <Link href="/me/projects" className={cn(buttonVariants({ variant: "outline" }), "h-16 rounded-md bg-background/70 text-xl font-medium")}>
+          <Link href="/me/projects" className={cn(buttonVariants({ variant: "outline" }), "h-14 rounded-md bg-background/70 text-xl font-medium")}>
             取消
           </Link>
         ) : null}
-        <Button disabled={submitting} onClick={handleSubmit} className="h-16 rounded-md text-xl ">
+        <Button disabled={submitting} onClick={handleSubmit} className="h-13 rounded-md text-xl ">
           {mode === "create" ? <Bell /> : <Save />}
           {submitting ? (mode === "create" ? "发布中..." : "保存中...") : mode === "create" ? "发布项目" : "保存修改"}
         </Button>

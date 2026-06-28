@@ -8,8 +8,6 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import Response
 
-from app.core.config import get_settings
-
 SESSION_COOKIE_NAME = "makerhub_session"
 SESSION_TTL_DAYS = 30
 PASSWORD_HASH_ITERATIONS = 600_000
@@ -78,17 +76,3 @@ def set_session_cookie(response: Response, session_token: str, expires: datetime
 
 def clear_session_cookie(response: Response) -> None:
     response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
-
-
-def build_callback_url(provider: str) -> str:
-    settings = get_settings()
-    if provider == "google" and settings.auth_google_redirect_uri:
-        return settings.auth_google_redirect_uri
-    if provider == "github" and settings.auth_github_redirect_uri:
-        return settings.auth_github_redirect_uri
-    return f"{settings.auth_base_url.rstrip('/')}/api/v1/auth/{provider}/callback"
-
-
-def build_frontend_callback_url(callback_url: str | None = None) -> str:
-    settings = get_settings()
-    return callback_url or settings.auth_frontend_url.rstrip("/") + "/"
