@@ -21,8 +21,6 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str
     email_verification_secret: str
-    auth_proxy_url: str | None = None
-    auth_proxy_key: str | None = None
     auth_google_id: str | None = None
     auth_google_secret: str | None = None
     auth_github_id: str | None = None

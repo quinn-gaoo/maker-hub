@@ -386,38 +386,70 @@ def login_with_email(payload: EmailLoginRequest, response: Response, db: Session
 
 async def _exchange_google_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
-    proxy_url = _require_auth_proxy_url(settings)
-    proxy_key = _require_auth_proxy_key(settings)
     async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS) as client:
         token_response = await _run_oauth_request(
             client.post(
-                f"{proxy_url}/google",
-                headers={"X-Auth-Proxy-Key": proxy_key},
-                json={
+                "https://oauth2.googleapis.com/token",
+                data={
                     "client_id": settings.auth_google_id,
                     "client_secret": settings.auth_google_secret,
                     "code": code,
                     "code_verifier": code_verifier,
+                    "grant_type": "authorization_code",
                     "redirect_uri": redirect_uri,
                 },
             ),
             provider_label="Google",
-            action_label="交换授权信息",
-            request_url=f"{proxy_url}/google",
+            action_label="交换访问令牌",
+            request_url="https://oauth2.googleapis.com/token",
         )
-        return token_response.json()
+        token_payload = token_response.json()
+        access_token = token_payload.get("access_token")
+        if not access_token:
+            raise service_unavailable("Google 登录服务未返回访问令牌，请稍后重试。")
+
+        profile_response = await _run_oauth_request(
+            client.get(
+                "https://openidconnect.googleapis.com/v1/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            ),
+            provider_label="Google",
+            action_label="获取用户信息",
+            request_url="https://openidconnect.googleapis.com/v1/userinfo",
+        )
+        profile = profile_response.json()
+        provider_account_id = profile.get("sub")
+        if not provider_account_id:
+            raise service_unavailable("Google 登录服务未返回用户标识，请稍后重试。")
+
+        return {
+            "provider": "google",
+            "provider_account_id": str(provider_account_id),
+            "type": "oauth",
+            "access_token": access_token,
+            "refresh_token": token_payload.get("refresh_token"),
+            "expires_at": token_payload.get("expires_in"),
+            "token_type": token_payload.get("token_type"),
+            "scope": token_payload.get("scope"),
+            "id_token": token_payload.get("id_token"),
+            "session_state": None,
+            "user": {
+                "id": f"google:{provider_account_id}",
+                "email": profile.get("email"),
+                "name": profile.get("name"),
+                "image": profile.get("picture"),
+                "email_verified": profile.get("email_verified"),
+            },
+        }
 
 
 async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str) -> dict:
     settings = get_settings()
-    proxy_url = _require_auth_proxy_url(settings)
-    proxy_key = _require_auth_proxy_key(settings)
     async with httpx.AsyncClient(timeout=OAUTH_HTTP_TIMEOUT_SECONDS, headers={"Accept": "application/json"}) as client:
         token_response = await _run_oauth_request(
             client.post(
-                f"{proxy_url}/github",
-                headers={"X-Auth-Proxy-Key": proxy_key},
-                json={
+                "https://github.com/login/oauth/access_token",
+                data={
                     "client_id": settings.auth_github_id,
                     "client_secret": settings.auth_github_secret,
                     "code": code,
@@ -426,24 +458,63 @@ async def _exchange_github_code(code: str, code_verifier: str, redirect_uri: str
                 },
             ),
             provider_label="GitHub",
-            action_label="交换授权信息",
-            request_url=f"{proxy_url}/github",
+            action_label="交换访问令牌",
+            request_url="https://github.com/login/oauth/access_token",
         )
-        return token_response.json()
+        token_payload = token_response.json()
+        access_token = token_payload.get("access_token")
+        if not access_token:
+            raise service_unavailable("GitHub 登录服务未返回访问令牌，请稍后重试。")
 
+        auth_headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {access_token}",
+            "User-Agent": "MakerHub API",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        profile_response = await _run_oauth_request(
+            client.get("https://api.github.com/user", headers=auth_headers),
+            provider_label="GitHub",
+            action_label="获取用户信息",
+            request_url="https://api.github.com/user",
+        )
+        emails_response = await _run_oauth_request(
+            client.get("https://api.github.com/user/emails", headers=auth_headers),
+            provider_label="GitHub",
+            action_label="获取邮箱信息",
+            request_url="https://api.github.com/user/emails",
+        )
+        profile = profile_response.json()
+        emails = emails_response.json()
+        provider_account_id = profile.get("id")
+        if provider_account_id is None:
+            raise service_unavailable("GitHub 登录服务未返回用户标识，请稍后重试。")
 
-def _require_auth_proxy_url(settings) -> str:
-    value = settings.auth_proxy_url.strip() if settings.auth_proxy_url else ""
-    if not value:
-        raise service_unavailable("OAuth 代理地址未配置。")
-    return value.rstrip("/")
+        primary_email = None
+        if isinstance(emails, list):
+            primary_email = next((item.get("email") for item in emails if item.get("primary")), None)
+            primary_email = primary_email or next((item.get("email") for item in emails if item.get("email")), None)
+        primary_email = primary_email or profile.get("email")
 
-
-def _require_auth_proxy_key(settings) -> str:
-    value = settings.auth_proxy_key.strip() if settings.auth_proxy_key else ""
-    if not value:
-        raise service_unavailable("OAuth 代理密钥未配置。")
-    return value
+        return {
+            "provider": "github",
+            "provider_account_id": str(provider_account_id),
+            "type": "oauth",
+            "access_token": access_token,
+            "refresh_token": token_payload.get("refresh_token"),
+            "expires_at": None,
+            "token_type": token_payload.get("token_type"),
+            "scope": token_payload.get("scope"),
+            "id_token": None,
+            "session_state": None,
+            "user": {
+                "id": f"github:{provider_account_id}",
+                "email": primary_email,
+                "name": profile.get("name") or profile.get("login"),
+                "image": profile.get("avatar_url"),
+                "email_verified": None,
+            },
+        }
 
 
 async def _upsert_auth_user(db: Session, auth_payload: dict) -> User:

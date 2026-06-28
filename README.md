@@ -72,18 +72,21 @@ EMAIL_VERIFICATION_CODE_TTL_MINUTES=10
 EMAIL_VERIFICATION_CODE_COOLDOWN_SECONDS=60
 ```
 
-第三方 OAuth 登录需要在后端配置 OAuth 应用信息和代理地址。后端会把 `code`、`client_id`、`client_secret` 发送给 portal 代理，由 portal 代理访问 Google/GitHub 换取用户信息：
+第三方 OAuth 登录需要在后端配置 OAuth 应用信息。portal 负责发起授权跳转并把回调 `code` 交给后端，后端会直接访问 Google/GitHub 换取访问令牌和用户信息：
 
 ```bash
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=
-AUTH_PROXY_URL=http://localhost:3000/api/proxy/oauth
-AUTH_PROXY_KEY=
 ```
 
-portal 前端也需要配置同一个 `AUTH_PROXY_KEY`，并配置公开的 OAuth Client ID 用于发起第三方授权跳转。
+portal 前端需要配置公开的 OAuth Client ID 用于发起第三方授权跳转：
+
+```bash
+NEXT_PUBLIC_AUTH_GOOGLE_ID=
+NEXT_PUBLIC_AUTH_GITHUB_ID=
+```
 
 4. 创建一个管理后台账号
 
