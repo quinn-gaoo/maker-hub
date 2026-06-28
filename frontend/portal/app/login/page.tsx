@@ -1,4 +1,4 @@
-import { EmailAuthForm } from "@/components/email-auth-form";
+import { AuthPanel } from "@/components/auth-panel";
 import { LoginButtons } from "@/components/login-buttons";
 import { Badge } from "@/components/ui/badge";
 import { isOAuthProviderEnabled } from "@/lib/oauth";
@@ -66,10 +66,10 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="w-full md:min-w-[600px] md:w-auto rounded-md border border-border bg-card/90 p-4 shadow-xl/5 backdrop-blur-sm md:p-8">
-            <EmailAuthForm />
-            <div className="my-10 flex items-center gap-4 text-muted-foreground">
+            <AuthPanel />
+            <div className="my-6 px-2 flex items-center gap-4 text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
-              <span className="text-[14px]">或</span>
+              <span className="text-xs">第三方账号登录</span>
               <div className="h-px flex-1 bg-border" />
             </div>
             <LoginButtons providers={providerMeta} />

@@ -4,7 +4,7 @@ import { ChevronDown, FolderKanban, LogIn, LogOut, Settings, UserRound } from "l
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +92,7 @@ export async function Header() {
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-2 text-sm font-medium text-foreground">
                       <Link href="/me/profile">
                         <Settings className="mr-2.5 size-4.5 stroke-[2.1]" />
-                        编辑个人信息
+                        个人信息
                       </Link>
                     </DropdownMenuItem>
                   </div>

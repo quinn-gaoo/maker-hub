@@ -122,6 +122,8 @@ img {
   max-width: 100%;
 }
 
-/* ::selection {
-  background: rgba(24, 24, 27, 0.12);
-} */
+::selection {
+  background: #ecc4b0c4;
+  /* color: var(--color-foreground); */
+  text-shadow: 0 0 1px var(--color-foreground-20);
+}

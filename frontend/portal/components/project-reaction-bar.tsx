@@ -80,7 +80,7 @@ export function ProjectReactionBar({
           size={compact ? "sm" : "default"}
           disabled={pending || !isAuthenticated}
           onClick={() => submitReaction("up")}
-          className={cn("rounded-full", currentReaction === "up" ? "" : "bg-background/80")}
+          className={cn("rounded-sm h-7", currentReaction === "up" ? "" : "bg-background/80")}
         >
           <ThumbsUp className="size-4" />
           <span className="font-mono">{upvoteCount}</span>
@@ -90,7 +90,7 @@ export function ProjectReactionBar({
           size={compact ? "sm" : "default"}
           disabled={pending || !isAuthenticated}
           onClick={() => submitReaction("down")}
-          className={cn("rounded-full", currentReaction === "down" ? "" : "bg-background/80")}
+          className={cn("rounded-sm h-7", currentReaction === "down" ? "" : "bg-background/80")}
         >
           <ThumbsDown className="size-4" />
           <span className="font-mono">{downvoteCount}</span>

@@ -21,9 +21,9 @@ export function LoginButtons({ providers, className }: LoginButtonsProps) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className={cn("rounded-[14px] border border-border bg-card/70 p-6", className)}>
-      <p className="text-center text-[13px] font-medium tracking-[0.04em] text-muted-foreground">第三方账号登录</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+    <div className={cn("bg-card/70 p-2", className)}>
+      <div className=" grid gap-3 sm:grid-cols-2">
+
         {providers.map((provider) => {
           const Icon = providerIcons[provider.id as keyof typeof providerIcons];
 
@@ -31,7 +31,7 @@ export function LoginButtons({ providers, className }: LoginButtonsProps) {
             <Button
               key={provider.id}
               variant="outline"
-              className="h-13 w-full justify-center gap-3 rounded-[14px] border-input bg-background text-[14px] font-medium text-foreground shadow-none hover:bg-secondary"
+              className="h-12 rounded-sm border-input "
               disabled={!provider.enabled || pending}
               onClick={() => {
                 if (!provider.enabled) {

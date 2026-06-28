@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Bell, Plus, Save, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,17 @@ type PendingImage = {
 };
 
 const UI_DESCRIPTION_LENGTH = 500;
+
+type ProjectMutationResponse = {
+  id?: string;
+  slug?: string;
+  message?: string;
+};
+
+type ProjectImageUploadResponse = {
+  imageUrl?: string;
+  message?: string;
+};
 
 type ImageTileProps = {
   imageUrl: string;
@@ -87,7 +99,7 @@ function ImageTile({
         <img src={imageUrl} alt={label} className="h-full w-full object-cover" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-base text-foreground">{detail ?? imageUrl}</p>
+        <p className="truncate font-mono text-sm  text-foreground">{detail ?? imageUrl}</p>
         <Badge variant="outline" className="mt-2 rounded-full">
           {label}
         </Badge>
@@ -224,6 +236,31 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
     });
   }
 
+  async function uploadPendingProjectImages(targetProjectId: string) {
+    const uploadedImageUrls: string[] = [];
+
+    for (const image of pendingImages) {
+      const readyFile = await uploadFile(image.file);
+      const uploadResponse = await fetch(`/api/bff/uploads/projects/${targetProjectId}/images`, {
+        method: "POST",
+        headers: {
+          "Content-Type": readyFile.type,
+          "X-File-Name": encodeURIComponent(readyFile.name),
+        },
+        body: readyFile,
+        credentials: "include",
+      });
+
+      const uploadPayload = (await uploadResponse.json().catch(() => null)) as ProjectImageUploadResponse | null;
+      if (!uploadResponse.ok || !uploadPayload?.imageUrl) {
+        throw new Error(uploadPayload?.message ?? "图片上传失败");
+      }
+      uploadedImageUrls.push(uploadPayload.imageUrl);
+    }
+
+    return uploadedImageUrls;
+  }
+
   async function handleSubmit() {
     if (submitting) {
       return;
@@ -251,51 +288,65 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
     }
 
     setSubmitting(true);
+    const loadingToastId = toast.loading(mode === "create" ? "正在发布项目..." : "正在保存项目...");
 
     try {
-      const draftPayload = JSON.stringify({
+      const basePayload = {
         ...parsed.data,
         githubUrl: parsed.data.githubUrl || null,
+      };
+
+      if (mode === "edit") {
+        if (!projectId) {
+          throw new Error("缺少项目 ID，无法保存。");
+        }
+
+        const uploadedImageUrls = await uploadPendingProjectImages(projectId);
+        const payload = JSON.stringify({
+          ...basePayload,
+          images: [...existingImages, ...uploadedImageUrls],
+        });
+
+        const response = await fetch(`/api/bff/projects/${projectId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: payload,
+          credentials: "include",
+        });
+
+        const result = (await response.json().catch(() => null)) as ProjectMutationResponse | null;
+        if (!response.ok || !result?.id) {
+          throw new Error(result?.message ?? "项目保存失败");
+        }
+
+        setPendingImages([]);
+        router.refresh();
+        toast.success("项目保存成功。", { id: loadingToastId });
+        return;
+      }
+
+      const createPayload = JSON.stringify({
+        ...basePayload,
         images: existingImages,
       });
 
-      const createOrUpdateEndpoint = mode === "create" ? "/api/bff/projects" : `/api/bff/projects/${projectId}`;
-      const createOrUpdateMethod = mode === "create" ? "POST" : "PATCH";
-
-      const response = await fetch(createOrUpdateEndpoint, {
-        method: createOrUpdateMethod,
+      const response = await fetch("/api/bff/projects", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: draftPayload,
+        body: createPayload,
         credentials: "include",
       });
 
-      const result = (await response.json().catch(() => null)) as { id?: string; slug?: string; message?: string } | null;
+      const result = (await response.json().catch(() => null)) as ProjectMutationResponse | null;
       if (!response.ok || !result?.slug || !result?.id) {
         throw new Error(result?.message ?? "项目保存失败");
       }
 
-      const uploadedImageUrls: string[] = [];
-      for (const image of pendingImages) {
-        const readyFile = await uploadFile(image.file);
-        const uploadResponse = await fetch(`/api/bff/uploads/projects/${result.id}/images`, {
-          method: "POST",
-          headers: {
-            "Content-Type": readyFile.type,
-            "X-File-Name": encodeURIComponent(readyFile.name),
-          },
-          body: readyFile,
-          credentials: "include",
-        });
-
-        const uploadPayload = (await uploadResponse.json().catch(() => null)) as { imageUrl?: string; message?: string } | null;
-        if (!uploadResponse.ok || !uploadPayload?.imageUrl) {
-          throw new Error(uploadPayload?.message ?? "图片上传失败");
-        }
-        uploadedImageUrls.push(uploadPayload.imageUrl);
-      }
-
+      const uploadedImageUrls = await uploadPendingProjectImages(result.id);
       if (uploadedImageUrls.length > 0) {
         const patchResponse = await fetch(`/api/bff/projects/${result.id}`, {
           method: "PATCH",
@@ -303,74 +354,74 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ...parsed.data,
-            githubUrl: parsed.data.githubUrl || null,
+            ...basePayload,
             images: [...existingImages, ...uploadedImageUrls],
           }),
           credentials: "include",
         });
-        const patched = (await patchResponse.json().catch(() => null)) as { id?: string; message?: string } | null;
+
+        const patched = (await patchResponse.json().catch(() => null)) as ProjectMutationResponse | null;
         if (!patchResponse.ok || !patched?.id) {
           throw new Error(patched?.message ?? "项目保存失败");
         }
-        router.push(`/projects/${patched.id}`);
-        router.refresh();
-        return;
       }
 
+      toast.success("项目发布成功。", { id: loadingToastId });
       router.push(`/projects/${result.id}`);
       router.refresh();
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "项目保存失败");
+      const message = submissionError instanceof Error ? submissionError.message : "项目保存失败";
+      setError(message);
+      toast.error(message, { id: loadingToastId });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="space-y-9 rounded-[1.75rem] border border-border/80 bg-card/70 p-6 shadow-sm md:p-12">
-      <label className="grid gap-3 text-lg font-bold">
-        <span>项目标题 <span className="text-primary">*</span></span>
+    <div className="space-y-9 rounded-md border border-border/80 bg-card/70 p-8">
+      <label className="grid gap-3 ">
+        <span className="text-sm font-semibold text-foreground">项目标题 <span className="text-primary">*</span></span>
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="给你的作品起一个吸引人的名字"
           maxLength={MAX_TITLE_LENGTH}
-          className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+          className="h-11 rounded-sm bg-background/70 px-6 text-sm"
         />
       </label>
 
       <div className="grid gap-8 md:grid-cols-2">
-        <label className="grid gap-3 text-lg font-bold">
-          <span>项目网址 <span className="text-primary">*</span></span>
+        <label className="grid gap-3">
+          <span className="text-sm font-semibold text-foreground">项目网址 <span className="text-primary">*</span></span>
           <Input
             value={projectUrl}
             onChange={(event) => setProjectUrl(event.target.value)}
             placeholder="https://your-project.com"
-            className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+            className="h-11 rounded-sm bg-background/70 px-6 text-sm"
           />
         </label>
-        <label className="grid gap-3 text-lg font-bold">
-          <span>GitHub 链接</span>
+        <label className="grid gap-3 ">
+          <span className="text-sm font-semibold text-foreground">GitHub 链接</span>
           <Input
             value={githubUrl}
             onChange={(event) => setGithubUrl(event.target.value)}
             placeholder="https://github.com/you/repo"
-            className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+            className="h-11 rounded-sm bg-background/70 px-6 text-sm"
           />
         </label>
       </div>
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-lg font-bold">项目标签 <span className="text-primary">*</span></span>
-        <span className="font-mono text-base text-muted-foreground">已填 {Array.from(new Set(parsedTags)).length} 个（上限 {MAX_TAGS} 个）</span>
+          <span className="text-sm font-semibold text-foreground">项目标签 <span className="text-primary">*</span></span>
+          <span className="font-mono text-sm  text-muted-foreground">已填 {Array.from(new Set(parsedTags)).length} 个（上限 {MAX_TAGS} 个）</span>
         </div>
         <Input
           value={tagInput}
           onChange={(event) => setTagInput(event.target.value)}
           placeholder="输入自定义标签，用英文逗号分隔，例如：Agent, 视频生成, 工作流"
-          className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+          className="h-11 rounded-sm bg-background/70 px-6 text-sm"
         />
         <div className="flex flex-wrap gap-2">
           {Array.from(new Set(parsedTags)).slice(0, MAX_TAGS).map((tag) => (
@@ -381,8 +432,8 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
         </div>
       </div>
 
-      <label className="grid gap-3 text-lg font-bold">
-        <span>项目描述 <span className="text-primary">*</span></span>
+      <label className="grid gap-3 ">
+        <span className="text-sm font-semibold text-foreground">项目描述 <span className="text-primary">*</span></span>
         <Textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -390,13 +441,13 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
           maxLength={UI_DESCRIPTION_LENGTH}
           className="min-h-56 resize-none rounded-lg bg-background/70 px-6 py-5 text-xl leading-8"
         />
-        <span className="text-right font-mono text-base font-medium text-muted-foreground">{description.length}/{UI_DESCRIPTION_LENGTH}</span>
+        <span className="text-right font-mono text-sm  font-medium text-muted-foreground">{description.length}/{UI_DESCRIPTION_LENGTH}</span>
       </label>
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-heading text-lg font-bold">宣传图片</h3>
-          <p className="font-mono text-base text-muted-foreground">当前 {existingImages.length + pendingImages.length} 张（建议 1-3 张）</p>
+          <h3 className="text-sm font-semibold text-foreground">宣传图片</h3>
+          <p className="font-mono text-sm text-muted-foreground">当前 {existingImages.length + pendingImages.length} 张（建议 1-3 张）</p>
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row">
@@ -412,7 +463,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
             placeholder="粘贴图片链接 & 回车添加"
             className="h-16 flex-1 rounded-lg bg-background/70 px-6 text-xl"
           />
-          <Button type="button" variant="secondary" onClick={handleAddImageUrl} className="h-16 rounded-md px-8 text-lg font-bold">
+          <Button type="button" variant="secondary" onClick={handleAddImageUrl} >
             <Plus />
             添加
           </Button>
@@ -430,7 +481,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
               onChange={(event) => handleFileChange(event.target.files)}
             />
           </label>
-          <span className="text-base text-muted-foreground">支持 JPG、PNG、WebP</span>
+          <span className="text-sm  text-muted-foreground">支持 JPG、PNG、WebP</span>
         </div>
       </div>
 
@@ -487,9 +538,9 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
             取消
           </Link>
         ) : null}
-        <Button disabled={submitting} onClick={handleSubmit} className="h-16 rounded-md text-xl font-bold">
+        <Button disabled={submitting} onClick={handleSubmit} className="h-16 rounded-md text-xl ">
           {mode === "create" ? <Bell /> : <Save />}
-          {mode === "create" ? "发布项目" : "保存修改"}
+          {submitting ? (mode === "create" ? "发布中..." : "保存中...") : mode === "create" ? "发布项目" : "保存修改"}
         </Button>
       </div>
     </div>

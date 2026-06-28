@@ -4,7 +4,7 @@ import { ArrowDown, Flame, Grid2X2, Rocket } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { apiGet } from "@/lib/backend";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectCard } from "@/components/project-card";
 import { cn } from "@/lib/utils";
@@ -146,12 +146,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">最近上新</p>
                   <div className="space-y-3">
                     {featuredProjects.map((project) => (
-                      <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center gap-3 rounded-md p-1 transition-colors hover:bg-muted/50">
-                        <div className="size-10 overflow-hidden rounded-lg bg-muted">
+                      <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center gap-3 rounded-md p-1 transition-colors group">
+                        <div className="size-10 overflow-hidden rounded-sm bg-muted">
                           {project.coverImageUrl ? <img src={project.coverImageUrl} alt={project.title} className="h-full w-full object-cover" /> : null}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{project.title}</p>
+                          <p className="truncate text-sm font-semibold group-hover:text-primary/80">{project.title}</p>
                           <p className="truncate font-mono text-xs text-muted-foreground">@{project.author.username ?? "creator"}</p>
                         </div>
                       </Link>
@@ -185,11 +185,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl space-y-7 px-4 pt-10 md:px-8">
+      <section className="mx-auto w-full max-w-7xl space-y-7 px-4 pt-10 pb-12 md:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">Recently Published</p>
-            <h2 className="font-heading text-4xl font-black tracking-[-0.07em]">{tag ? `标签：${tag}` : "最新发布项目"}</h2>
+            <h2 className="font-heading text-3xl font-black ">{tag ? `标签：${tag}` : "最新发布项目"}</h2>
             <p className="mt-2 text-sm text-muted-foreground">这里没有热度算法，按时间倒序展示。慢慢逛，看见每一个真诚的作品。</p>
           </div>
           <div className="inline-flex w-fit overflow-hidden rounded-full border border-border bg-card p-1 text-sm">
@@ -203,7 +203,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   className={cn(
                     "inline-flex min-w-14 items-center justify-center rounded-xl px-4 py-2 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     active
-                      ? "bg-muted"
+                      ? "bg-muted text-primary font-medium"
                       : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                   )}
                 >
@@ -214,7 +214,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </div>
         {q ? <p className="text-sm text-muted-foreground">当前搜索词：{q}</p> : null}
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
           {projects.items.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
@@ -222,7 +222,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         {projects.items.length > 0 ? (
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
             {currentPage > 1 ? (
-              <Link href={buildHref({ page: currentPage - 1 })} scroll={false} className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <Link href={buildHref({ page: currentPage - 1 })} scroll={false} className="inline-flex items-center gap-2 rounded-sm border border-border bg-card px-5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                 上一页
               </Link>
             ) : null}
@@ -230,7 +230,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               第 {currentPage} / {totalPages} 页
             </span>
             {currentPage < totalPages ? (
-              <Link href={buildHref({ page: currentPage + 1 })} scroll={false} className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <Link href={buildHref({ page: currentPage + 1 })} scroll={false} className="inline-flex items-center gap-2 rounded-sm border border-border bg-card px-5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                 下一页
                 <ArrowDown className="size-4" />
               </Link>

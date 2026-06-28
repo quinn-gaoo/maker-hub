@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogIn, Send, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_COMMENT_LENGTH } from "@/lib/constants";
 import type { CommentItem } from "@/types";

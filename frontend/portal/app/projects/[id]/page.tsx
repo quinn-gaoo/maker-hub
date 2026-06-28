@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { CommentSection } from "@/components/comment-section";
 import { ProjectReactionBar } from "@/components/project-reaction-bar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import type { ProjectDetail } from "@/types";
 import type { ProjectViewCountResponse } from "@/types";
 
@@ -54,15 +54,15 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const authorInitial = (project.author.username ?? project.author.name ?? "M").slice(0, 1).toUpperCase();
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 md:px-8">
-      <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+    <div className="mx-auto w-full max-w-7xl space-y-10 py-12 px-4 md:px-8">
+      <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
         <ArrowLeft className="size-4" />
         返回发现页
       </Link>
 
       <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_370px] xl:grid-cols-[minmax(0,1fr)_410px]">
         <div className="min-w-0 space-y-8">
-          <div className="space-y-5">
+          <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {project.author.username ? (
                 <Link href={`/u/${project.author.username}`} className="inline-flex items-center gap-2 font-mono transition-colors hover:text-foreground">
@@ -103,6 +103,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                   isAuthenticated={Boolean(session?.user)}
                   compact
                 />
+                <span className="h-5 w-px bg-border" />
                 {project.tags.map((tag) => (
                   <Badge key={tag.id} variant="secondary" className="rounded-full px-3 py-1 font-mono font-medium">
                     {tag.name}
@@ -111,7 +112,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-card/70 p-5 text-base leading-8 text-foreground shadow-sm">
+            <div className="rounded-sm border border-border/50 bg-card/70 p-5 text-base leading-8 text-foreground ">
               {project.description}
             </div>
 
@@ -135,11 +136,11 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
             {galleryImages.length > 0 ? (
               <div className="space-y-4 pt-2">
-                <h2 className="font-heading text-2xl font-black tracking-[-0.05em]">更多截图</h2>
-                <div className="grid gap-4 md:grid-cols-2">
+                <h2 className="font-heading text-2xl font-black ">作品截图</h2>
+                <div className="grid gap-4 ">
                   {galleryImages.map((image) => (
                     <div key={image.id} className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-                      <img src={image.imageUrl} alt={project.title} className="aspect-[4/3] h-full w-full object-cover" />
+                      <img src={image.imageUrl} alt={project.title} className="aspect-4/3 h-full w-full object-cover" />
                     </div>
                   ))}
                 </div>
@@ -158,7 +159,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
-          <div className="rounded-2xl border border-border/80 bg-card/70 p-6 shadow-sm">
+          <div className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-sm">
             <p className="mb-6 text-sm font-semibold text-muted-foreground">创作者</p>
             <div className="flex items-center gap-4">
               <Link href={project.author.username ? `/u/${project.author.username}` : "#"} className="grid size-16 place-items-center overflow-hidden rounded-full bg-accent text-lg font-black text-foreground">
@@ -182,7 +183,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card/70 p-6 shadow-sm">
+          <div className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-sm">
             <p className="mb-6 text-sm font-semibold text-muted-foreground">互动数据</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-xl bg-muted/45 p-4">

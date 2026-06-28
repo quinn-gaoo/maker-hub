@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -95,33 +95,33 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   }
 
   return (
-    <div className="space-y-9 rounded-[1.75rem] border border-border/80 bg-card/70 p-6 shadow-sm md:p-12">
-      <label className="grid gap-3 text-lg font-bold">
+    <div className="space-y-9 rounded-sm border border-border/80 bg-card/70 p-6 ">
+      <label className="grid gap-3 ">
         <span>昵称 <span className="text-primary">*</span></span>
         <Input
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="例如：Quinn"
           maxLength={80}
-          className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+          className="h-11 rounded-lg bg-background/70 px-6 text-xl"
         />
       </label>
 
-      <label className="grid gap-3 text-lg font-bold">
+      <label className="grid gap-3 ">
         <span>用户名 <span className="text-primary">*</span></span>
         <Input
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           placeholder="quinn"
           maxLength={32}
-          className="h-16 rounded-lg bg-background/70 px-6 font-mono text-xl"
+          className="h-11 rounded-lg bg-background/70 px-6 font-mono text-xl"
         />
         <span className="text-base font-medium text-muted-foreground">
           只支持小写字母、数字、下划线、短横线。这将成为你的主页地址： <span className="font-mono">makerhub.app/u/{username || "username"}</span>
         </span>
       </label>
 
-      <label className="grid gap-3 text-lg font-bold">
+      <label className="grid gap-3 ">
         <span>头像链接</span>
         <div className="grid gap-4 md:grid-cols-[96px_1fr] md:items-center">
           <div className="size-20 overflow-hidden rounded-full bg-accent">
@@ -137,12 +137,12 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             value={avatarUrl}
             onChange={(event) => setAvatarUrl(event.target.value)}
             placeholder="https://example.com/avatar.png"
-            className="h-16 rounded-lg bg-background/70 px-6 text-xl"
+            className="h-11 rounded-lg bg-background/70 px-6 text-xl"
           />
         </div>
       </label>
 
-      <label className="grid gap-3 text-lg font-bold">
+      <label className="grid gap-3 ">
         <span>个人简介</span>
         <Textarea
           value={bio}
@@ -155,10 +155,10 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       </label>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="grid gap-4 border-t border-border/70 pt-8 md:grid-cols-[120px_1fr]">
-        <Link href={cancelHref} className={cn(buttonVariants({ variant: "outline" }), "h-16 rounded-md bg-background/70 text-xl font-medium")}>
+        <Link href={cancelHref} className={cn(buttonVariants({ variant: "outline" }), "h-11 rounded-md bg-background/70 text-xl font-medium")}>
           取消
         </Link>
-        <Button disabled={pending} onClick={handleSubmit} className="h-16 rounded-md text-xl font-bold">
+        <Button disabled={pending} onClick={handleSubmit} className="h-11 rounded-md text-xl font-bold">
           <Save />
           保存个人信息
         </Button>

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ProjectActionsProps = {
@@ -44,15 +44,20 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Link
           href={`/me/projects/${projectId}/edit`}
-          className={cn(buttonVariants({ variant: "outline" }), "h-12 rounded-md bg-background/70 text-base")}
+          className={cn(buttonVariants({ variant: "outline" }),
+            "h-11 rounded-md bg-background/70 text-base"
+          )
+          }
         >
           <Pencil />
-          编辑项目
+          编辑
         </Link>
-        <Button variant="outline" disabled={pending} onClick={handleDelete} className="h-12 rounded-md bg-background/70 px-5 text-base">
+        <Button variant="outline" disabled={pending} onClick={handleDelete}
+          className="h-11 rounded-md bg-background/70 px-5 text-base"
+        >
           <Trash2 />
           删除
         </Button>

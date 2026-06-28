@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import "@/app/globals.css";
 import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>
           <div className="flex w-full flex-col gap-10">{children}</div>
         </main>
+        <Toaster />
         <footer className="border-t border-border/80 bg-[#f1e5d8]/80 px-4 py-10 dark:bg-[#130d08]/92 md:px-8">
           <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div className="space-y-4">
