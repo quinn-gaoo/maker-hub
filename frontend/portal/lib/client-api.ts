@@ -4,7 +4,7 @@ export function getApiBaseUrl() {
   //   throw new Error("Missing NEXT_PUBLIC_API_BASE_URL.");
   // }
   // return value.replace(/\/$/, "");
-  return '/api/v1'
+  return 'https://maker-hub-web.vercel.app/api/v1'
 }
 
 export function apiPath(path: string) {
