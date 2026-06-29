@@ -7,6 +7,7 @@ import type {
   AuthSessionResponse,
   PaginatedResponse,
   ProjectDetail,
+  UploadedImageResponse,
 } from "@/types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "/api/v1";
@@ -144,6 +145,16 @@ export async function createOfficialProject(payload: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadProjectImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+
+  return request<UploadedImageResponse>("/uploads/projects/images", {
+    method: "POST",
+    body: formData,
   });
 }
 

@@ -132,3 +132,7 @@ export type ProjectDetail = {
   images: ProjectImage[];
   comments: CommentItem[];
 };
+
+export type UploadedImageResponse = {
+  imageUrl: string;
+};
