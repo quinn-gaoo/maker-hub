@@ -53,6 +53,12 @@ function getImageContentType(file: File) {
   return extension ? IMAGE_CONTENT_TYPES_BY_EXTENSION[extension] : undefined;
 }
 
+function buildUploadFormData(file: File) {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  return formData;
+}
+
 function getAvatarUploadError(result: AvatarUploadResponse | null, fallback: string) {
   const fieldErrors = result?.fieldErrors ?? result?.field_errors;
   return result?.message ?? result?.detail?.message ?? fieldErrors?.image ?? fieldErrors?.content_type ?? fieldErrors?.file ?? fallback;
@@ -86,11 +92,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
       const response = await clientAuthFetch("/uploads/users/me/avatar", {
         method: "POST",
-        headers: {
-          "Content-Type": contentType,
-          "X-File-Name": encodeURIComponent(file.name),
-        },
-        body: file,
+        body: buildUploadFormData(file),
       });
 
       const result = (await response.json().catch(() => null)) as AvatarUploadResponse | null;

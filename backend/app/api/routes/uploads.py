@@ -1,7 +1,6 @@
 import uuid
-from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -13,31 +12,31 @@ from app.services import attach_project_image, upload_project_image_file, upload
 router = APIRouter(prefix="/uploads")
 
 
-def _read_upload_headers(request: Request) -> tuple[str, str]:
-    file_name = unquote(request.headers.get("x-file-name", "").strip())
-    content_type = request.headers.get("content-type", "").split(";")[0].strip()
+async def _read_upload_file(file: UploadFile) -> tuple[str, str, bytes]:
+    file_name = (file.filename or "").strip()
+    content_type = (file.content_type or "").split(";")[0].strip()
     if not file_name:
         raise bad_request("缺少文件名。", {"fileName": "缺少文件名"})
     if not content_type:
         raise bad_request("缺少文件类型。", {"contentType": "缺少文件类型"})
-    return file_name, content_type
+    body = await file.read()
+    await file.close()
+    if not body:
+        raise bad_request("上传内容不能为空。", {"file": "上传内容不能为空"})
+    return file_name, content_type, body
 
 
 @router.post("/projects/{project_id}/images", response_model=ProjectImageUploadResponse)
 async def upload_project_image(
     project_id: str,
-    request: Request,
+    file: UploadFile = File(...),
     current_user: AuthenticatedUser | None = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
     if not current_user:
         raise bad_request("请先登录后再上传图片。")
 
-    file_name, content_type = _read_upload_headers(request)
-
-    body = await request.body()
-    if not body:
-        raise bad_request("上传内容不能为空。", {"file": "上传内容不能为空"})
+    file_name, content_type, body = await _read_upload_file(file)
 
     return attach_project_image(
         db=db,
@@ -51,17 +50,13 @@ async def upload_project_image(
 
 @router.post("/projects/images", response_model=UploadedImageResponse)
 async def upload_project_image_file_only(
-    request: Request,
+    file: UploadFile = File(...),
     current_user: AuthenticatedUser | None = Depends(get_session_user),
 ):
     if not current_user:
         raise bad_request("请先登录后再上传图片。")
 
-    _file_name, content_type = _read_upload_headers(request)
-
-    body = await request.body()
-    if not body:
-        raise bad_request("上传内容不能为空。", {"file": "上传内容不能为空"})
+    _file_name, content_type, body = await _read_upload_file(file)
 
     return upload_project_image_file(
         object_prefix=f"projects/uploads/{current_user.user_id}",
@@ -73,18 +68,14 @@ async def upload_project_image_file_only(
 
 @router.post("/users/me/avatar", response_model=UserAvatarUploadResponse)
 async def upload_my_avatar(
-    request: Request,
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: AuthenticatedUser = Depends(get_session_user),
 ):
     if not current_user:
         raise bad_request("请先登录后再上传图片。")
 
-    file_name, content_type = _read_upload_headers(request)
-
-    body = await request.body()
-    if not body:
-        raise bad_request("上传内容不能为空。", {"file": "上传内容不能为空"})
+    file_name, content_type, body = await _read_upload_file(file)
 
     return upload_user_avatar(
         db=db,

@@ -64,6 +64,12 @@ type ImageTileProps = {
   disableMoveRight: boolean;
 };
 
+function buildUploadFormData(file: File) {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  return formData;
+}
+
 const formSchema = z.object({
   title: z.string().trim().min(1, "标题不能为空").max(MAX_TITLE_LENGTH, `标题不能超过 ${MAX_TITLE_LENGTH} 字`),
   description: z
@@ -221,11 +227,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
       const readyFile = await uploadFile(image.file);
       const uploadResponse = await clientAuthFetch("/uploads/projects/images", {
         method: "POST",
-        headers: {
-          "Content-Type": readyFile.type,
-          "X-File-Name": encodeURIComponent(readyFile.name),
-        },
-        body: readyFile,
+        body: buildUploadFormData(readyFile),
       });
 
       const uploadPayload = (await uploadResponse.json().catch(() => null)) as ProjectImageUploadResponse | null;
@@ -299,7 +301,7 @@ export function ProjectForm({ mode, projectId, initialData }: ProjectFormProps) 
 
         setPendingImages([]);
         router.refresh();
-        toast.success("项目保存成功。", { id: loadingToastId });
+        toast.success("项目更新成功。", { id: loadingToastId });
         return;
       }
 
