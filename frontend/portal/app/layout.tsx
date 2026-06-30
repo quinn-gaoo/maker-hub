@@ -41,6 +41,12 @@ export const metadata: Metadata = {
     description: defaultDescription,
     images: [absoluteUrl("/logo.png")],
   },
+  verification: {
+    google: "15Hhqs_2d3QYkkUTzvqV_bvKC3ZjSogR9iLbV0uQRmE",
+    other: {
+      "msvalidate.01": "BB50FF94BC778D1249F142122DE60DDA",
+    },
+  },
   robots: publicRobots,
   icons: {
     icon: [
