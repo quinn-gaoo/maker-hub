@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDown, Flame, Grid2X2, Rocket } from "lucide-react";
 
@@ -7,12 +8,86 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectCard } from "@/components/project-card";
+import { absoluteUrl, buildDescription, publicRobots, siteName } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import type { HomeStats, PaginatedResponse, ProjectCard as ProjectCardType } from "@/types";
 
 type HomePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const params = ((await searchParams) ?? {}) as Record<string, string | undefined>;
+  const page = params.page ?? "1";
+  const tag = params.tag ?? "";
+  const q = params.q ?? "";
+  const rawSort = params.sort ?? "latest";
+  const sort = ["latest", "top", "discussed"].includes(rawSort) ? rawSort : "latest";
+
+  const search = new URLSearchParams();
+  if (page !== "1") {
+    search.set("page", page);
+  }
+  if (sort !== "latest") {
+    search.set("sort", sort);
+  }
+  if (tag) {
+    search.set("tag", tag);
+  }
+  if (q) {
+    search.set("q", q);
+  }
+
+  const titleParts: string[] = [];
+  if (q) {
+    titleParts.unshift(`${q} 相关项目`);
+  } else if (tag) {
+    titleParts.unshift(`${tag} 项目`);
+  } else {
+    titleParts.unshift("发现 AI 项目");
+  }
+
+  if (page !== "1") {
+    titleParts.unshift(`第 ${page} 页`);
+  }
+
+  const description = buildDescription(
+    q
+      ? `在 MakerHub 搜索 ${q} 相关的 AI 项目、创作者作品和真实用户反馈。`
+      : tag
+        ? `浏览 MakerHub 上带有 ${tag} 标签的 AI 项目、独立作品和创作者主页。`
+        : "发现独立开发者与 AI 创作者发布的项目、截图、链接与真实评论。",
+  );
+  const canonical = search.size > 0 ? `/?${search.toString()}` : "/";
+
+  return {
+    title: titleParts.join(" | "),
+    description,
+    robots: publicRobots,
+    alternates: {
+      canonical,
+    },
+    openGraph: {
+      type: "website",
+      title: `${titleParts.join(" | ")} | ${siteName}`,
+      description,
+      url: canonical,
+      siteName,
+      images: [
+        {
+          url: absoluteUrl("/logo.png"),
+          alt: siteName,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${titleParts.join(" | ")} | ${siteName}`,
+      description,
+      images: [absoluteUrl("/logo.png")],
+    },
+  };
+}
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await auth();

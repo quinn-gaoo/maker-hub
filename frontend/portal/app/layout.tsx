@@ -4,11 +4,44 @@ import Link from "next/link";
 import "@/app/globals.css";
 import { Header } from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
+import { absoluteUrl, defaultDescription, defaultTitle, publicRobots, siteName, siteUrl } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "MakerHub | AI 创作者作品宣传站",
-  description: "展示独立 AI 创作者项目、宣传图、链接与评论的中文社区。",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${siteName} | ${defaultTitle}`,
+    template: `%s | ${siteName}`,
+  },
+  description: defaultDescription,
+  applicationName: siteName,
+  keywords: ["MakerHub", "AI 项目", "独立开发", "AI 创作者", "作品展示", "项目收录"],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "zh_CN",
+    url: siteUrl,
+    siteName,
+    title: `${siteName} | ${defaultTitle}`,
+    description: defaultDescription,
+    images: [
+      {
+        url: absoluteUrl("/logo.png"),
+        width: 512,
+        height: 512,
+        alt: siteName,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteName} | ${defaultTitle}`,
+    description: defaultDescription,
+    images: [absoluteUrl("/logo.png")],
+  },
+  robots: publicRobots,
   icons: {
     icon: [
       { url: "/favicon.ico" },

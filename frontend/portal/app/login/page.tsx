@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { AuthPanel } from "@/components/auth-panel";
 import { LoginButtons } from "@/components/login-buttons";
 import { Badge } from "@/components/ui/badge";
+import { privateRobots } from "@/lib/seo";
 import { isOAuthProviderEnabled } from "@/lib/oauth";
 import { CircleUserRound, FolderKanban, MessageCircleMore } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "登录",
+  description: "登录 MakerHub，管理你的项目、主页和互动。",
+  robots: privateRobots,
+};
 
 const providerMeta = [
   { id: "google", label: "Google", enabled: isOAuthProviderEnabled("google") },

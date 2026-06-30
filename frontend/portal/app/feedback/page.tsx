@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import { Lightbulb } from "lucide-react";
 
 import { FeedbackForm } from "@/components/feedback-form";
 import { Badge } from "@/components/ui/badge";
+import { publicRobots } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "意见反馈",
+  description: "把你对 MakerHub 的问题、功能建议和产品想法告诉我们。",
+  robots: publicRobots,
+  alternates: {
+    canonical: "/feedback",
+  },
+};
 
 export default function FeedbackPage() {
   return (

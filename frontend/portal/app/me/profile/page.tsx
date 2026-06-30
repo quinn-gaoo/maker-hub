@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { apiGet } from "@/lib/backend";
 import { ProfileForm } from "@/components/profile-form";
 import { Badge } from "@/components/ui/badge";
+import { privateRobots } from "@/lib/seo";
 import type { UserProfile } from "@/types";
+
+export const metadata: Metadata = {
+  title: "个人信息",
+  robots: privateRobots,
+};
 
 export default async function EditProfilePage() {
   const session = await auth();

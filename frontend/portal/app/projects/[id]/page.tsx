@@ -8,6 +8,7 @@ import { CommentSection } from "@/components/comment-section";
 import { ProjectReactionBar } from "@/components/project-reaction-bar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { absoluteUrl, buildDescription, buildProjectJsonLd, buildProjectKeywords, publicRobots, siteName } from "@/lib/seo";
 import type { ProjectDetail } from "@/types";
 import type { ProjectViewCountResponse } from "@/types";
 
@@ -26,9 +27,35 @@ function formatCount(value: number) {
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { id } = await params;
   const project = await apiGet<ProjectDetail>(`/projects/${id}`);
+  const description = buildDescription(project.description);
+  const canonical = `/projects/${project.id}`;
+  const images = [
+    ...(project.coverImageUrl ? [{ url: project.coverImageUrl, alt: project.title }] : []),
+    ...project.images.slice(0, 3).map((image) => ({ url: image.imageUrl, alt: project.title })),
+  ];
+
   return {
-    title: `${project.title} | MakerHub`,
-    description: project.description.slice(0, 140),
+    title: project.title,
+    description,
+    keywords: buildProjectKeywords(project),
+    alternates: {
+      canonical,
+    },
+    robots: publicRobots,
+    openGraph: {
+      type: "article",
+      title: project.title,
+      description,
+      url: canonical,
+      siteName,
+      images,
+    },
+    twitter: {
+      card: images.length > 0 ? "summary_large_image" : "summary",
+      title: project.title,
+      description,
+      images: images.map((image) => image.url),
+    },
   };
 }
 
@@ -50,11 +77,16 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     : project.coverImageUrl
       ? [{ id: `${project.id}-cover`, imageUrl: project.coverImageUrl, sortOrder: 0 }]
       : [];
+  const jsonLd = buildProjectJsonLd(project);
   const authorName = project.author.name ?? project.author.username ?? "Creator";
   const authorInitial = (project.author.username ?? project.author.name ?? "M").slice(0, 1).toUpperCase();
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10 py-12 px-4 md:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
         <ArrowLeft className="size-4" />
         返回发现页

@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { ProjectCard } from "@/components/project-card";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildUserDescription, publicRobots, siteName } from "@/lib/seo";
 import type { PaginatedResponse, ProjectCard as ProjectCardType, UserProfile } from "@/types";
 
 type UserPageProps = {
@@ -15,8 +16,33 @@ type UserPageProps = {
 
 export async function generateMetadata({ params }: UserPageProps): Promise<Metadata> {
   const { username } = await params;
+  const [profile, projects] = await Promise.all([
+    apiGet<UserProfile>(`/users/${username}`),
+    apiGet<PaginatedResponse<ProjectCardType>>(`/users/${username}/projects`),
+  ]);
+  const description = buildUserDescription(profile, projects.total);
+
   return {
-    title: `${username} 的主页 | MakerHub`,
+    title: `${profile.username} 的主页`,
+    description,
+    robots: publicRobots,
+    alternates: {
+      canonical: `/u/${profile.username}`,
+    },
+    openGraph: {
+      type: "profile",
+      title: `${profile.username} 的主页`,
+      description,
+      url: `/u/${profile.username}`,
+      siteName,
+      images: profile.avatarUrl ? [{ url: profile.avatarUrl, alt: profile.username ?? username }] : undefined,
+    },
+    twitter: {
+      card: profile.avatarUrl ? "summary" : "summary",
+      title: `${profile.username} 的主页`,
+      description,
+      images: profile.avatarUrl ? [profile.avatarUrl] : undefined,
+    },
   };
 }
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -8,7 +9,13 @@ import { ProjectCard } from "@/components/project-card";
 import { ProjectActions } from "@/components/project-actions";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { privateRobots } from "@/lib/seo";
 import type { PaginatedResponse, ProjectCard as ProjectCardType } from "@/types";
+
+export const metadata: Metadata = {
+  title: "我的项目",
+  robots: privateRobots,
+};
 
 export default async function MyProjectsPage() {
   const session = await auth();

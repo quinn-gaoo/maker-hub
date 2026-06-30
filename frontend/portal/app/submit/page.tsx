@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { ProjectForm } from "@/components/project-form";
 import { Badge } from "@/components/ui/badge";
+import { privateRobots } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "发布项目",
+  robots: privateRobots,
+};
 
 export default async function SubmitPage() {
   const session = await auth();
